@@ -1,23 +1,20 @@
 
 
 import argparse
-import getopt
 import json
 import math
 import re
-import sys
 import logging
 
 from solid import *
 from solid.utils import *
+
 from switch import Switch
 from support import Support
 from support_cutout import SupportCutout
 from cell import Cell
-
 from item_collection import ItemCollection
 from rotation_collection import RotationCollection
-
 from body import Body
 
 logger = logging.getLogger('keyboard_layout_generator')
@@ -69,110 +66,8 @@ support_bar_tile_width = support_bar_width / 2
 build_x = math.floor(x_build_size / Cell.SWITCH_SPACING)
 build_y = math.floor(y_build_size / Cell.SWITCH_SPACING)
 
-# Return actual mm for a U format key spacing value
-def u(space_count):
-    return Cell.SWITCH_SPACING * space_count
 
-
-def plate(max_x, min_y, real_max_x, real_max_y, case_x, case_y, pre_minkowski_thickness, corner, plate_thickness, plate_only = False, plate_supports = False):
-
-    h = 1.0
-    w = 1.0
-    max_y = abs(min_y)
-
-    plate_object = cube([case_x, case_y, pre_minkowski_thickness], center = True)
-    plate_object = minkowski() ( plate_object, corner )
-
-    logger.info('plate_supports: %s', str(plate_supports))
-
-    side_margin_diff = right_margin - left_margin
-    top_margin_diff = bottom_margin - top_margin
-
-    if plate_supports == True:
-        max_x_ceil = math.ceil(max_x)
-        max_y_ceil = math.ceil(abs(min_y))
-        for x in range(max_x_ceil + 1):
-            w = 1.0
-            max_x_diff = max_x - x
-            if max_x_diff < 0:
-                # Reduce w to be remaining x value
-                w = x - max_x
-            for y in range(max_y_ceil + 1):
-                h = 1.0
-                max_y_diff = max_y - y
-                if max_y_diff < 0:
-                    # Reduce h to be remaining y value
-                    h = y - max_y
-                plate_object += right(u(x) - ((real_max_x / 2) + (side_margin_diff / 2))) ( back(u(y) - ((real_max_y / 2) + (top_margin_diff / 2))) ( 
-                    Support(x, y, w, h, plate_thickness, support_bar_height, support_bar_width).get()
-                    # switch_support_outline( w = w, h = h, plate_thickness = 1.51, set_to_origin = True ) 
-                ) )
-
-            # break
-
-    return plate_object
-
-
-
-def case_border(max_x, min_y, real_max_x, real_max_y, case_x, case_y, corner, plate_thickness, plate_only = False):
-    
-    case_wall = cube([case_x, case_y, case_height], center = True)
-    case_inner = cube([case_x - (plate_wall_thickness * 2), case_y - (plate_wall_thickness * 2), case_height * 2], center = True)
-
-    case_wall = minkowski() (case_wall, corner)
-    case_inner = minkowski() (case_inner, corner)
-
-    case_wall -= case_inner
-
-    case_wall = down(case_height / 2) ( case_wall )
-
-    return case_wall
-
-
-
-def case(max_x, min_y, plate_thickness, plate_only = False, plate_supports = False):
-    
-    # Get rhe calculated real max and y sizes of the board
-    real_max_x = u(max_x + 1)
-    real_max_y = u(abs(min_y) + 1)
-
-    # Get the margins for the plate without the ammount that the minkowski will add
-    pre_minkowski_x_margin = ((right_margin + left_margin) / 2 - plate_corner_radius)
-    pre_minkowski_y_margin = ((top_margin + bottom_margin) / 2 - plate_corner_radius)
-
-    # get the pre minkowski plate sizes
-    case_x = real_max_x + (pre_minkowski_x_margin * 2)
-    case_y = real_max_y + (pre_minkowski_y_margin * 2)
-
-    # Get the plate thickness before the minkowski
-    pre_minkowski_thickness = plate_thickness / 2
-
-    corner = cylinder(r = plate_corner_radius, h = pre_minkowski_thickness, center = True)
-
-    logger.info('plate_supports: %s', str(plate_supports))
-
-    plate_object = plate(max_x, min_y, real_max_x, real_max_y, case_x, case_y, pre_minkowski_thickness, corner, plate_thickness, plate_only, plate_supports)
-    case_wall = case_border(max_x, min_y, real_max_x, real_max_y, case_x, case_y, corner, plate_thickness, plate_only)
-
-
-    case_object = plate_object + case_wall
-    if plate_only == True:
-        case_object = plate_object
-    
-    # move case_object to line up with board
-
-    side_margin_diff = right_margin - left_margin
-    top_margin_diff = bottom_margin - top_margin
-
-    logger.info('side_margin_diff: %s, top_margin_diff: %s', side_margin_diff, top_margin_diff)
-
-    case_object = down(0) ( right((real_max_x / 2) + (side_margin_diff / 2)) ( back((real_max_y / 2) + (top_margin_diff / 2)) ( case_object ) ) )
-
-    return case_object
-
-
-
-def main(argv):
+def main():
 
     parser = argparse.ArgumentParser(description='Build custom keyboard SCAD file using keyboard layout editor format')
     parser.add_argument('-i', '--input-file', metavar = 'layout_json_file_name.json', help = 'a path to a keyboard layout editor json file', required = True)
@@ -377,15 +272,15 @@ def main(argv):
             switch_cutouts += x_row[y].get_moved()
             w = x_row[y].w
             h = x_row[y].h
-            switch_support_cutouts += right(u(x)) ( forward(u(y)) ( 
+            switch_support_cutouts += right(Cell.u(x)) ( forward(Cell.u(y)) ( 
                 SupportCutout(x, y, w, h, plate_thickness, support_bar_height, support_bar_width).support_cutout()
                 # switch_support_cutout( w = w, h = h, plate_thickness = 1.51 ) 
             ) )
 
-            switch_x_max = u(x + w) + left_margin
-            switch_x_min = u(x) + left_margin
-            switch_y_max = u(abs(y) + h) + top_margin
-            switch_y_min = u(abs(y)) + top_margin
+            switch_x_max = Cell.u(x + w) + left_margin
+            switch_x_min = Cell.u(x) + left_margin
+            switch_y_max = Cell.u(abs(y) + h) + top_margin
+            switch_y_min = Cell.u(abs(y)) + top_margin
 
             temp_object = {
                 'x': x,
@@ -463,4 +358,4 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main()
