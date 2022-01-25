@@ -121,7 +121,7 @@ def main():
     json_key_pattern = '([{,])([xywha1]+):'
     json_key_replace = '\\1"\\2":'
 
-    modifier_include_list = ['x', 'y', 'w', 'h', 'r', 'rx', 'ry']
+    # modifier_include_list = ['x', 'y', 'w', 'h', 'r', 'rx', 'ry']
 
     f = open(layout_json_file_name)
 
@@ -163,208 +163,128 @@ def main():
 
         keyboard.set_parameter_dict(parameter_dict)
 
-
-    # Create initil sOlidPython objects to be added to later
-    assembly = union()
-    logger.info('type(assembly): %s', str(type(assembly)))
-    switch_cutouts = union()
-    switch_supports = union()
-    switch_support_cutouts = union()
-    rotate_switch_cutout_collection = union()
-    rotate_support_collection = union()
-    rotate_support_cutout_collection = union()
+    keyboard.process_keyboard_layout(keyboard_layout_dict)
 
 
-    y = 0.0
-    rotation = 0.0
-    rx = 0.0
-    ry = 0.0
-    r_x_offset = 0.0
-    r_y_offset = 0.0
 
-    switch_collection = ItemCollection()
-    support_collection = ItemCollection()
-    support_cutout_collection = ItemCollection()
 
-    switch_rotation_collection = RotationCollection()
-    support_rotation_collection = RotationCollection()
-    cupport_cutout_rotation_collection = RotationCollection()
+    # max_x, min_y = keyboard.switch_collection.get_collection_bounds()
+    # logger.info('max_x: %d, min_y: %d', max_x, min_y)
+    # logger.info('build_x: %d, build_y: %d', keyboard.build_x, keyboard.build_y)
 
-    # top_margin = keyboard.get_param('top_margin')
-    # bottom_margin = keyboard.get_param('bottom_margin')
-    # left_margin = keyboard.get_param('left_margin')
-    # right_margin = keyboard.get_param('right_margin')
-    # case_height = keyboard.get_param('case_height')
-    # plate_wall_thickness = keyboard.get_param('plate_wall_thickness')
-    # plate_thickness = keyboard.get_param('plate_thickness')
-    # plate_corner_radius = keyboard.get_param('plate_corner_radius')
-    # plate_only = keyboard.get_param('plate_only')
-    # plate_supports = keyboard.get_param('plate_supports')
-    # kerf = keyboard.get_param('kerf')
-    # support_bar_height = keyboard.get_param('support_bar_height')
-    # support_bar_width = keyboard.get_param('support_bar_width')
+    # x_parts = math.ceil(max_x / keyboard.build_x)
+    # y_parts = math.ceil(abs(min_y) / keyboard.build_y)
+    # logger.info('x_parts: %d, y_parts: %d', x_parts, y_parts)
 
-    body = Body(keyboard.top_margin, keyboard.bottom_margin, keyboard.left_margin, keyboard.right_margin, keyboard.case_height, keyboard.plate_wall_thickness, keyboard.plate_thickness, keyboard.plate_corner_radius, keyboard.plate_only, keyboard.plate_supports)
+    # x_per_part = math.ceil(max_x / x_parts)
+    # y_per_part = math.floor(min_y / y_parts)
+    # logger.info('x_per_part: %d, y_per_part: %d', x_per_part, y_per_part)
 
-    # Test Solids
-    # switch_collection.add_item(3, 4, Switch(0, 0, 1, 1, kerf = kerf).get_moved() )
+    # # Union all standard switch cutouts together
+    # current_x_start = 0.0
+    # current_y_start = 0.0
+    # current_x_section = 0
+    # current_y_section = 0
+    # next_x_section = 0
+    # next_y_section = 0
+    # section_list = [[]]
 
-    # assembly = union()
-    
-    # assembly += Support(0, 0, 1, 1, plate_thickness, support_bar_height, support_bar_width).get_moved()
-    # # assembly += right(25) ( SupportCutout(0, 0, 1, 1, plate_thickness, support_bar_height, support_bar_width).support_cutout() )
-    # # assembly -= Switch(0, 0, 1, 1, kerf = kerf).get_moved()
+    # build_area = left(keyboard.left_margin) ( back(keyboard.y_build_size - keyboard.top_margin) ( down(10) ( cube([keyboard.x_build_size, keyboard.y_build_size, 10]) ) ) )
 
-    # scad_render_to_file(assembly, scad_output_file_name, file_header=f'$fn = {FRAGMENTS};')
-
-    # return
-    # End Test Solids
-
-    for idx, row in enumerate(keyboard_layout_dict):
-
-        x = 0.0
-        w = 1.0
-        h = 1.0
-
-        if type(row) == type([]):
-            for col in row:               
-                if type(col) == type({}):
-
-                    for key in col.keys():
-                        modifier_type = key
-                        
-                        if modifier_type in modifier_include_list:
-                            size = float(col[key])
-                            if modifier_type == 'w':
-                                w = size
-                            if modifier_type == 'h':
-                                h = size
-                            if modifier_type == 'x':
-                                x += size
-                                r_x_offset = size
-                            if modifier_type == 'y':
-                                y += size
-                                r_y_offset = size
-                            if modifier_type == 'r':
-                                rotation = size
-                                y = 0
-                                x = 0
-                            if modifier_type == 'rx':
-                                rx = size
-                            if modifier_type == 'ry':
-                                ry = size
-                    
-                else:
-                    x_offset = x
-                    y_offset = -(y)
-
-                    # Create switch cutout object without rotation
-                    if rotation == 0.0:
-                        switch_collection.add_item(x_offset, y_offset, Switch(x_offset, y_offset, w, h, kerf = keyboard.kerf))
-                        
-                    # Create switch cutout object without rotation
-                    elif rotation != 0.0:
-                        switch_rotation_collection.add_item(rotation, x_offset, y_offset, Switch(x_offset, y_offset, w, h, kerf = keyboard.kerf), rx, ry)
-
-                    # Create normal switch support outline
-                    if rotation == 0.0:
-                        support_collection.add_item(x_offset, y_offset, Support(x_offset, y_offset, w, h, keyboard.plate_thickness, keyboard.support_bar_height, keyboard.support_bar_width))
-                        
-                    # Create rotated switch support outline
-                    elif rotation != 0.0:
-                        support_rotation_collection.add_item(rotation, x_offset, y_offset, Support(x_offset, y_offset,w, h, plate_thickness, support_bar_height, support_bar_width), rx, ry)
-
-                    x += w    
-                    w = 1.0
-                    h = 1.0
-
-            y += 1
-
-    max_x = support_collection.get_max_x()
-
-    min_y = support_collection.get_min_y()
-
-    logger.info('max_x: %d, min_y: %d', max_x, min_y)
-
-    logger.info('build_x: %d, build_y: %d', keyboard.build_x, keyboard.build_y)
-
-    x_parts = math.ceil(max_x / keyboard.build_x)
-    y_parts = math.ceil(abs(min_y) / keyboard.build_y)
-    logger.info('x_parts: %d, y_parts: %d', x_parts, y_parts)
-
-    x_per_part = math.ceil(max_x / x_parts)
-    y_per_part = math.floor(min_y / y_parts)
-    logger.info('x_per_part: %d, y_per_part: %d', x_per_part, y_per_part)
-
-    # Union all standard support blocks together
-    for x in support_collection.get_x_list():
-        for y in support_collection.get_y_list_in_x(x):
-            switch_supports += support_collection.get_item(x, y).get_moved()
-    
-    # Union all standard switch cutouts together
-    current_x_start = 0.0
-    current_y_start = 0.0
-    current_x_section = 0
-    current_y_section = 0
-    next_x_section = 0
-    next_y_section = 0
-    section_list = [[]]
-
-    max_x, min_y = switch_collection.get_collection_bounds()
-
-    switch_object_dict = switch_collection.get_collection_dict()
-    for x in sorted(switch_object_dict.keys()):
-        # if len(section_list) < current_x_section:
+    # switch_object_dict = keyboard.switch_collection.get_collection_dict()
+    # for x in sorted(switch_object_dict.keys()):
+    #     # if len(section_list) < current_x_section:
             
-        #     section_list.append([])
-        x_row = switch_object_dict[x]
-        for y in x_row.keys():
-            logger.debug('\tx: %d, y: %d', x, y)
-            logger.debug('x_row.keys(): %s', str(x_row.keys()))
-            switch_cutouts += x_row[y].get_moved()
-            w = x_row[y].w
-            h = x_row[y].h
-            switch_support_cutouts += right(Cell.u(x)) ( forward(Cell.u(y)) ( 
-                SupportCutout(x, y, w, h, keyboard.plate_thickness, keyboard.support_bar_height, keyboard.support_bar_width).support_cutout()
-                # switch_support_cutout( w = w, h = h, plate_thickness = 1.51 ) 
-            ) )
+    #     #     section_list.append([])
+    #     x_row = switch_object_dict[x]
+    #     for y in x_row.keys():
+    #         logger.debug('\tx: %d, y: %d', x, y)
+    #         logger.debug('x_row.keys(): %s', str(x_row.keys()))
+    #         # switch_cutouts += x_row[y].get_moved()
+    #         w = x_row[y].w
+    #         h = x_row[y].h
+            
+    #         switch_x_max = Cell.u(x + w) + keyboard.left_margin
+    #         switch_x_min = Cell.u(x) + keyboard.left_margin
+    #         switch_y_max = Cell.u(abs(y) + h) + keyboard.top_margin
+    #         switch_y_min = Cell.u(abs(y)) + keyboard.top_margin
 
-            switch_x_max = Cell.u(x + w) + keyboard.left_margin
-            switch_x_min = Cell.u(x) + keyboard.left_margin
-            switch_y_max = Cell.u(abs(y) + h) + keyboard.top_margin
-            switch_y_min = Cell.u(abs(y)) + keyboard.top_margin
+    #         temp_object = {
+    #             'x': x,
+    #             'y': y,
+    #             'w': w,
+    #             'h': h,
+    #             'switch_x_max': switch_x_max,
+    #             'switch_x_min': switch_x_min,
+    #             'switch_y_max': switch_y_max,
+    #             'switch_y_min': switch_y_min,
+    #             'object': x_row[y].get_moved()
+    #         }
 
-            temp_object = {
-                'x': x,
-                'y': y,
-                'w': w,
-                'h': h,
-                'switch_x_max': switch_x_max,
-                'switch_x_min': switch_x_min,
-                'switch_y_max': switch_y_max,
-                'switch_y_min': switch_y_min,
-                'object': x_row[y].get_moved()
-            }
-
-            if switch_x_max - current_x_start < keyboard.x_build_size:
-                # logger.info('current_x_section:', current_x_section)
-                section_list[current_x_section].append(temp_object)
-            elif switch_x_max - current_x_start > keyboard.x_build_size and next_x_section > current_x_section:
-                section_list[next_x_section].append(temp_object)
-            else:
-                # logger.info('switch_x_max:', switch_x_max, 'current_x_start:', current_x_start, 'switch_x_max - current_x_start:', switch_x_max - current_x_start, 'x_build_size:', x_build_size)
-                section_list.append([temp_object])
-                next_x_section = current_x_section + 1
+    #         if switch_x_max - current_x_start < keyboard.x_build_size:
+    #             # logger.info('current_x_section:', current_x_section)
+    #             section_list[current_x_section].append(temp_object)
+    #         elif switch_x_max - current_x_start > keyboard.x_build_size and next_x_section > current_x_section:
+    #             section_list[next_x_section].append(temp_object)
+    #         else:
+    #             # logger.info('switch_x_max:', switch_x_max, 'current_x_start:', current_x_start, 'switch_x_max - current_x_start:', switch_x_max - current_x_start, 'x_build_size:', x_build_size)
+    #             section_list.append([temp_object])
+    #             next_x_section = current_x_section + 1
 
             
-            # logger.info('\tswitch_x: (', switch_x_min, ',', switch_x_max, '), switch_y: (', switch_y_min, switch_y_max, ')')
+    #         # logger.info('\tswitch_x: (', switch_x_min, ',', switch_x_max, '), switch_y: (', switch_y_min, switch_y_max, ')')
         
-        if next_x_section > current_x_section:
-            current_x_start = section_list[next_x_section][0]['switch_x_min']
-            current_x_section = next_x_section
+    #     if next_x_section > current_x_section:
+    #         current_x_start = section_list[next_x_section][0]['switch_x_min']
+    #         current_x_section = next_x_section
+
+
+    assembly = keyboard.get_assembly()
+
+    keyboard.split_keybaord()
+
+
+    for idx, section in enumerate(keyboard.section_list):
+        section_built = False
+        for i in range(len(section)):
+            max_x = 0.0
+            max_x_y = 0.0
+            max_x_min_y = 0.0
+            min_y = 0.0
+            min_y_x = 0.0
+            min_y_max_x = 0.0
+            for key in section:
+                if key['accounted_for'] == False:
+                    x_end = key['x'] + key['w']
+                    y_end = key['y'] - key['h']
+                    if x_end > max_x:
+                        max_x = x_end 
+                        max_x_min_y = y_end
+                    elif x_end == max_x and y_end < max_x_min_y:
+                        max_x_min_y = y_end
+
+                    if y_end < min_y:
+                        min_y = y_end
+                        min_y_max_x = x_end
+                    elif y_end == min_y and x_end > min_y_max_x:
+                        min_y_max_x = x_end
+
+            assembly += right(Cell.u(min_y_max_x)) ( forward(Cell.u(max_x_min_y)) ( down(30 / 2) ( cube([keyboard.support_bar_width, Cell.u(1), 30]) ) ) )
+
+            for key in section:
+                if key['accounted_for'] == False:
+                    x_end = key['x'] + key['w']
+                    y_end = key['y'] - key['h']
+
+                    if max_x_min_y == y_end:
+                        key['accounted_for'] = True
+
+            logger.info('section: %d, max_x: %f, max_x_min_y: %f, min_y: %f, min_y_max_x: %f', idx, max_x, max_x_min_y, min_y, min_y_max_x)
+            section_built = True
+                
 
     section_objects = union()
-    for idx, section in enumerate(section_list):
+    for idx, section in enumerate(keyboard.section_list):
         # logger.info('new section: len', len(section))
         # logger.info('\tsection:', section)
         min_section_x = min(section, key=lambda switch:switch['x'])['switch_x_min']
@@ -376,35 +296,12 @@ def main():
         logger.info('min_section_y: %d', min_section_y)
         logger.info('max_section_y: %d', max_section_y)
         for section_item in section:
-            section_objects += up(idx * 4) ( section_item['object'] )
+            section_objects += up(idx * 8) ( section_item['object'] )
 
+    
 
-    # Union together all switch cutouts 
-    rotate_switch_cutout_collection = union()
-    for rotation in switch_rotation_collection.get_rotation_list():
-        rotate_switch_cutout_collection += switch_rotation_collection.get_rotated_moved_union(rotation)
-
-    # Union together all support
-    rotate_support_collection = union()
-    for rotation in support_rotation_collection.get_rotation_list():
-        rotate_support_collection += support_rotation_collection.get_rotated_moved_union(rotation)
-
-    switch_supports += rotate_support_collection
-    switch_cutouts += rotate_switch_cutout_collection
-    # switch_cutouts = switch_cutout(2.5)
-
-    body.set_dimensions(max_x, min_y)
-    assembly += body.case()
-
-    # assembly += switch_support_outline(set_to_origin = True)
-    # assembly += right(20) ( get_moved() )
-
-    assembly -= switch_support_cutouts
-    # assembly -= rotate_support_cutout_collection
-    assembly += switch_supports
-    assembly -= switch_cutouts
-    # assembly += section_objects
-    # assembly = switch_cutouts
+    assembly += section_objects
+    # assembly += build_area
 
     scad_render_to_file(assembly, scad_output_file_name, file_header=f'$fn = {FRAGMENTS};')
     # scad_render_to_file(assembly, scad_output_file_name)
