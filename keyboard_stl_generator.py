@@ -5,6 +5,8 @@ import json
 import math
 import re
 import logging
+import os
+import os.path
 
 from solid import *
 from solid.utils import *
@@ -16,6 +18,7 @@ from cell import Cell
 from item_collection import ItemCollection
 from rotation_collection import RotationCollection
 from body import Body
+from keyboard import Keyboard
 
 logger = logging.getLogger('keyboard_layout_generator')
 logger.setLevel(logging.INFO)
@@ -32,54 +35,70 @@ ch.setFormatter(formatter)
 
 logger.addHandler(ch)
 
-# #[Model Features]#
-plate_only = 0
+# # #[Model Features]#
+# plate_only = 0
 
 
-# #[Printer Info]#
-x_build_size = 200
-y_build_size = 200
-part_number = 1
+# # #[Printer Info]#
+# x_build_size = 200
+# y_build_size = 200
+# part_number = 1
+
+# # #[Switch Adjustment Dimensions]#
+# kerf = 0.00
+
+# # #[Holder Dimensions]# 
+# top_margin = 8
+# bottom_margin = 8
+# left_margin = 8
+# right_margin = 8
+# case_height = 10
+# plate_wall_thickness = 2.0
+# plate_thickness = 1.511
+# plate_corner_radius = 4
+
+# # #[Support Bars]#  
+# support_bar_height = 3.0
+# support_bar_width = 1.0
 
 
-# #[Switch Adjustment Dimensions]#
-kerf = 0.00
+# support_bar_tile_width = support_bar_width / 2
 
 
-# #[Holder Dimensions]# 
-top_margin = 8
-bottom_margin = 8
-left_margin = 8
-right_margin = 8
-case_height = 10
-plate_wall_thickness = 2.0
-plate_thickness = 1.511
-plate_corner_radius = 4
+# build_x = math.floor(x_build_size / Cell.SWITCH_SPACING)
+# build_y = math.floor(y_build_size / Cell.SWITCH_SPACING)
 
 
-# #[Support Bars]#  
-support_bar_height = 3.0
-support_bar_width = 1.0
-support_bar_tile_width = support_bar_width / 2
 
+def CheckExt(choices):
+    class Act(argparse.Action):
+        def __call__(self,parser,namespace,fname,option_string=None):
+            ext = os.path.splitext(fname)[1][1:]
+            if ext not in choices:
+                option_string = '({})'.format(option_string) if option_string else ''
+                parser.error("file doesn't end with one of {}{}".format(choices,option_string))
+            else:
+                setattr(namespace,self.dest,fname)
 
-build_x = math.floor(x_build_size / Cell.SWITCH_SPACING)
-build_y = math.floor(y_build_size / Cell.SWITCH_SPACING)
+    return Act
+
 
 
 def main():
 
     parser = argparse.ArgumentParser(description='Build custom keyboard SCAD file using keyboard layout editor format')
-    parser.add_argument('-i', '--input-file', metavar = 'layout_json_file_name.json', help = 'a path to a keyboard layout editor json file', required = True)
-    parser.add_argument('-o', '--output-file', metavar = 'object_name.scad', help = 'a path to a file to store the generated open scad file')
-    parser.add_argument('-r', '--resolution', metavar = 'num_segments', help = 'The resolution to be used when creating curves', default = 8)
+    parser.add_argument('-i', '--input-file', metavar = 'layout_json_file_name.json', help = 'A path to a keyboard layout editor json file', required = True, action=CheckExt({'json'}))
+    parser.add_argument('-o', '--output-file', metavar = 'object_name.scad', help = 'A path to a file to store the generated open scad file', action=CheckExt({'scad'}))
+    parser.add_argument('-p', '--parameter-file', metavar = 'parameters.json', help = 'A JSON file containing paramters for the object buing made', default = None, action=CheckExt({'json'}))
+    parser.add_argument('-r', '--render', help = 'Render an STL from the generated scad file', default = False, action = 'store_true')
+    parser.add_argument('-f', '--fragments', metavar = 'num_fragments', help = 'The number of fragments to be used when creating curves', default = 8)
     # parser.add_argument('-f', '--fill-edges', help = 'Fill empty edges to ensure keyboard is a complete rectangle', default = False, action = 'store_true')
     parser.add_argument('-x', '--x-fill', help = 'Pad empty spaces to the left of keys', default = False, action = 'store_true')
     parser.add_argument('-b', '--blank-fill', help = 'Pad empty spaces to the left of keys', default = False, action = 'store_true')
     # parser.add_argument('-b', '--build-area-break', metavar = 'sub_part_number', help = 'Pad empty spaces to the left of keys', default = -1 )
-    parser.add_argument('-t', '--plate-thickness', type = float, metavar = 'plate_thickness', help = 'Plate thickness in milimeters', default = 1.51 ) 
-    parser.add_argument('-p', '--plate-only', help = 'Only create the plate do not create case walls', default = False, action = 'store_true')
-    parser.add_argument('-s', '--plate-supports', help = 'Create support grid on entire plate', default = False, action = 'store_true')
+    # parser.add_argument('-t', '--plate-thickness', type = float, metavar = 'plate_thickness', help = 'Plate thickness in milimeters', default = 1.51 ) 
+    # parser.add_argument('-p', '--plate-only', help = 'Only create the plate do not create case walls', default = False, action = 'store_true')
+    # parser.add_argument('-s', '--plate-supports', help = 'Create support grid on entire plate', default = False, action = 'store_true')
 
 
     args = parser.parse_args()
@@ -89,23 +108,19 @@ def main():
 
     if args.output_file is None:
         scad_output_file_name = layout_json_file_name.replace('.json', '_out.scad')
+        stl_output_file_name = layout_json_file_name.replace('.json', '_out.stl')
     else:
         scad_output_file_name = args.output_file
+        stl_output_file_name = scad_output_file_name.replace('.scad', '.stl')
 
-    RESOLUTION = args.resolution
+    logger.info('Read layout from file %s write generated scad to %s. ', layout_json_file_name, scad_output_file_name)
 
-    plate_thickness = args.plate_thickness
+    FRAGMENTS = args.fragments
+    logger.info('\tFragments: %d', FRAGMENTS)
 
-    logger.info('plate_thickness: %d', plate_thickness)
-
-    logger.info('Read layout from file %s write generated scad to %s', layout_json_file_name, scad_output_file_name)
-    
     json_key_pattern = '([{,])([xywha1]+):'
     json_key_replace = '\\1"\\2":'
 
-    col_split_regex = '","|",{|},"'
-
-    modifier_ignore_list = ['a']
     modifier_include_list = ['x', 'y', 'w', 'h', 'r', 'rx', 'ry']
 
     f = open(layout_json_file_name)
@@ -116,19 +131,42 @@ def main():
 
     try:
         keyboard_layout_dict = json.loads(keyboard_layout)
-        logger.info('Valid Json Parsed')
+        logger.warning('Valid Json Parsed')
     except:
         keyboard_layout = '[%s]' % (keyboard_layout)
         json_replace_match = re.search(json_key_pattern, keyboard_layout)
         keyboard_layout = re.sub(json_key_pattern, json_key_replace, keyboard_layout)
-        keyboard_layout_dict = json.loads(keyboard_layout)
-        logger.info('Initial Json Invalid. Json modified and parsed')
+        try:
+            keyboard_layout_dict = json.loads(keyboard_layout)
+            logger.warning('Initial Json Invalid. Json modified and parsed')
+        except:
+            logger.error('Failed to parse json after attempt at correction.')
+            raise
 
-    # logger.info('keyboard_layout_dict:', keyboard_layout_dict)
+    logger.debug('keyboard_layout_dict:', keyboard_layout_dict)
 
-    # scad_keyboard_layout = []
+    keyboard = Keyboard()
 
+    parameter_dict = None
+    # Read parameter file
+    if args.parameter_file is not None:
+        f = open(args.parameter_file)
+
+        parameter_file_text = f.read()
+
+        try:
+            parameter_dict = json.loads(parameter_file_text)
+            logger.warning('Valid Json Parsed')
+        except:
+            logger.error('Failed to parse json after attempt at correction.')
+            raise
+
+        keyboard.set_parameter_dict(parameter_dict)
+
+
+    # Create initil sOlidPython objects to be added to later
     assembly = union()
+    logger.info('type(assembly): %s', str(type(assembly)))
     switch_cutouts = union()
     switch_supports = union()
     switch_support_cutouts = union()
@@ -152,7 +190,21 @@ def main():
     support_rotation_collection = RotationCollection()
     cupport_cutout_rotation_collection = RotationCollection()
 
-    body = Body(top_margin, bottom_margin, left_margin, right_margin, case_height, plate_wall_thickness, plate_thickness, plate_corner_radius, args.plate_only, args.plate_supports)
+    # top_margin = keyboard.get_param('top_margin')
+    # bottom_margin = keyboard.get_param('bottom_margin')
+    # left_margin = keyboard.get_param('left_margin')
+    # right_margin = keyboard.get_param('right_margin')
+    # case_height = keyboard.get_param('case_height')
+    # plate_wall_thickness = keyboard.get_param('plate_wall_thickness')
+    # plate_thickness = keyboard.get_param('plate_thickness')
+    # plate_corner_radius = keyboard.get_param('plate_corner_radius')
+    # plate_only = keyboard.get_param('plate_only')
+    # plate_supports = keyboard.get_param('plate_supports')
+    # kerf = keyboard.get_param('kerf')
+    # support_bar_height = keyboard.get_param('support_bar_height')
+    # support_bar_width = keyboard.get_param('support_bar_width')
+
+    body = Body(keyboard.top_margin, keyboard.bottom_margin, keyboard.left_margin, keyboard.right_margin, keyboard.case_height, keyboard.plate_wall_thickness, keyboard.plate_thickness, keyboard.plate_corner_radius, keyboard.plate_only, keyboard.plate_supports)
 
     # Test Solids
     # switch_collection.add_item(3, 4, Switch(0, 0, 1, 1, kerf = kerf).get_moved() )
@@ -163,7 +215,7 @@ def main():
     # # assembly += right(25) ( SupportCutout(0, 0, 1, 1, plate_thickness, support_bar_height, support_bar_width).support_cutout() )
     # # assembly -= Switch(0, 0, 1, 1, kerf = kerf).get_moved()
 
-    # scad_render_to_file(assembly, scad_output_file_name, file_header=f'$fn = {RESOLUTION};')
+    # scad_render_to_file(assembly, scad_output_file_name, file_header=f'$fn = {FRAGMENTS};')
 
     # return
     # End Test Solids
@@ -208,15 +260,15 @@ def main():
 
                     # Create switch cutout object without rotation
                     if rotation == 0.0:
-                        switch_collection.add_item(x_offset, y_offset, Switch(x_offset, y_offset, w, h, kerf = kerf))
+                        switch_collection.add_item(x_offset, y_offset, Switch(x_offset, y_offset, w, h, kerf = keyboard.kerf))
                         
                     # Create switch cutout object without rotation
                     elif rotation != 0.0:
-                        switch_rotation_collection.add_item(rotation, x_offset, y_offset, Switch(x_offset, y_offset, w, h, kerf = kerf), rx, ry)
+                        switch_rotation_collection.add_item(rotation, x_offset, y_offset, Switch(x_offset, y_offset, w, h, kerf = keyboard.kerf), rx, ry)
 
                     # Create normal switch support outline
                     if rotation == 0.0:
-                        support_collection.add_item(x_offset, y_offset, Support(x_offset, y_offset, w, h, plate_thickness, support_bar_height, support_bar_width))
+                        support_collection.add_item(x_offset, y_offset, Support(x_offset, y_offset, w, h, keyboard.plate_thickness, keyboard.support_bar_height, keyboard.support_bar_width))
                         
                     # Create rotated switch support outline
                     elif rotation != 0.0:
@@ -234,10 +286,10 @@ def main():
 
     logger.info('max_x: %d, min_y: %d', max_x, min_y)
 
-    logger.info('build_x: %d, build_y: %d', build_x, build_y)
+    logger.info('build_x: %d, build_y: %d', keyboard.build_x, keyboard.build_y)
 
-    x_parts = math.ceil(max_x / build_x)
-    y_parts = math.ceil(abs(min_y) / build_y)
+    x_parts = math.ceil(max_x / keyboard.build_x)
+    y_parts = math.ceil(abs(min_y) / keyboard.build_y)
     logger.info('x_parts: %d, y_parts: %d', x_parts, y_parts)
 
     x_per_part = math.ceil(max_x / x_parts)
@@ -273,14 +325,14 @@ def main():
             w = x_row[y].w
             h = x_row[y].h
             switch_support_cutouts += right(Cell.u(x)) ( forward(Cell.u(y)) ( 
-                SupportCutout(x, y, w, h, plate_thickness, support_bar_height, support_bar_width).support_cutout()
+                SupportCutout(x, y, w, h, keyboard.plate_thickness, keyboard.support_bar_height, keyboard.support_bar_width).support_cutout()
                 # switch_support_cutout( w = w, h = h, plate_thickness = 1.51 ) 
             ) )
 
-            switch_x_max = Cell.u(x + w) + left_margin
-            switch_x_min = Cell.u(x) + left_margin
-            switch_y_max = Cell.u(abs(y) + h) + top_margin
-            switch_y_min = Cell.u(abs(y)) + top_margin
+            switch_x_max = Cell.u(x + w) + keyboard.left_margin
+            switch_x_min = Cell.u(x) + keyboard.left_margin
+            switch_y_max = Cell.u(abs(y) + h) + keyboard.top_margin
+            switch_y_min = Cell.u(abs(y)) + keyboard.top_margin
 
             temp_object = {
                 'x': x,
@@ -294,10 +346,10 @@ def main():
                 'object': x_row[y].get_moved()
             }
 
-            if switch_x_max - current_x_start < x_build_size:
+            if switch_x_max - current_x_start < keyboard.x_build_size:
                 # logger.info('current_x_section:', current_x_section)
                 section_list[current_x_section].append(temp_object)
-            elif switch_x_max - current_x_start > x_build_size and next_x_section > current_x_section:
+            elif switch_x_max - current_x_start > keyboard.x_build_size and next_x_section > current_x_section:
                 section_list[next_x_section].append(temp_object)
             else:
                 # logger.info('switch_x_max:', switch_x_max, 'current_x_start:', current_x_start, 'switch_x_max - current_x_start:', switch_x_max - current_x_start, 'x_build_size:', x_build_size)
@@ -354,7 +406,12 @@ def main():
     # assembly += section_objects
     # assembly = switch_cutouts
 
-    scad_render_to_file(assembly, scad_output_file_name, file_header=f'$fn = {RESOLUTION};')
+    scad_render_to_file(assembly, scad_output_file_name, file_header=f'$fn = {FRAGMENTS};')
+    # scad_render_to_file(assembly, scad_output_file_name)
+
+    if args.render:
+        logger.info('Render STL from SCAD')
+        os.system('openscad -o %s  %s' % (stl_output_file_name, scad_output_file_name))
 
 
 if __name__ == "__main__":
