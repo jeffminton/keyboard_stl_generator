@@ -37,17 +37,18 @@ class Cell:
         self.logger = logging.getLogger('Cell')
         self.logger.setLevel(logging.INFO)
 
+        if not self.logger.hasHandlers():
         # create console handler and set level to debug
-        ch = logging.StreamHandler()
-        ch.setLevel(logging.INFO)
+            ch = logging.StreamHandler()
+            ch.setLevel(logging.INFO)
 
-        # create formatter
-        formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+            # create formatter
+            formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
 
-        # add formatter to ch
-        ch.setFormatter(formatter)
+            # add formatter to ch
+            ch.setFormatter(formatter)
 
-        self.logger.addHandler(ch)
+            self.logger.addHandler(ch)
         
         self.x = x
         self.y = y
@@ -58,10 +59,10 @@ class Cell:
         self.end_y = self.y - self.h
 
         self.x_start_mm = self.u(x)
-        self.x_start_mm = self.x_start_mm + self.u(w)
+        self.x_end_mm = self.x_start_mm + self.u(w)
 
         self.y_start_mm = self.u(y)
-        self.y_start_mm = self.y_start_mm + self.u(h)
+        self.y_end_mm = self.y_start_mm + self.u(h)
 
         self.switch_length = self.w
         if self.h > self.w:

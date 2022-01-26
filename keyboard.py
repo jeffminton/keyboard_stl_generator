@@ -26,17 +26,18 @@ class Keyboard():
         self.logger = logging.getLogger('Keyboard')
         self.logger.setLevel(logging.INFO)
 
+        if not self.logger.hasHandlers():
         # create console handler and set level to debug
-        ch = logging.StreamHandler()
-        ch.setLevel(logging.INFO)
+            ch = logging.StreamHandler()
+            ch.setLevel(logging.INFO)
 
-        # create formatter
-        formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+            # create formatter
+            formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
 
-        # add formatter to ch
-        ch.setFormatter(formatter)
+            # add formatter to ch
+            ch.setFormatter(formatter)
 
-        self.logger.addHandler(ch)
+            self.logger.addHandler(ch)
 
         self.modifier_include_list = ['x', 'y', 'w', 'h', 'r', 'rx', 'ry']
 
@@ -85,7 +86,7 @@ class Keyboard():
         self.rotate_support_collection = union()
         self.rotate_support_cutout_collection = union()
 
-        self.section_list = [[]]
+        self.section_list = [ItemCollection()]
 
 
     def build_attr_from_dict(self, parameter_dict):
@@ -184,7 +185,7 @@ class Keyboard():
     def get_assembly(self):
         assembly = union()
 
-        max_x, min_y = self.switch_collection.get_collection_bounds()
+        (max_x, min_y) = self.switch_collection.get_collection_bounds()
 
         self.switch_supports += self.support_collection.get_moved_union()
         self.switch_cutouts += self.switch_collection.get_moved_union()
@@ -218,7 +219,7 @@ class Keyboard():
 
 
     def split_keybaord(self):
-        max_x, min_y = self.switch_collection.get_collection_bounds()
+        (max_x, min_y) = self.switch_collection.get_collection_bounds()
         self.logger.info('max_x: %d, min_y: %d', max_x, min_y)
         self.logger.info('build_x: %d, build_y: %d', self.build_x, self.build_y)
 
@@ -255,6 +256,8 @@ class Keyboard():
                 switch_y_max = Cell.u(abs(y) + h) + self.top_margin
                 switch_y_min = Cell.u(abs(y)) + self.top_margin
 
+                new_switch = Switch(x, y, w, h)
+
                 temp_object = {
                     'x': x,
                     'y': y,
@@ -270,17 +273,20 @@ class Keyboard():
 
                 if switch_x_max - current_x_start < self.x_build_size:
                     # self.logger.info('current_x_section:', current_x_section)
-                    self.section_list[current_x_section].append(temp_object)
+                    self.section_list[current_x_section].add_item(x, y, new_switch)
                 elif switch_x_max - current_x_start > self.x_build_size and next_x_section > current_x_section:
-                    self.section_list[next_x_section].append(temp_object)
+                    self.section_list[next_x_section].add_item(x, y, new_switch)
                 else:
                     # self.logger.info('switch_x_max:', switch_x_max, 'current_x_start:', current_x_start, 'switch_x_max - current_x_start:', switch_x_max - current_x_start, 'x_build_size:', x_build_size)
-                    self.section_list.append([temp_object])
                     next_x_section = current_x_section + 1
+                    self.section_list.append(ItemCollection())
+                    self.section_list[next_x_section].add_item(x, y, new_switch)
 
                 
                 # self.logger.info('\tswitch_x: (', switch_x_min, ',', switch_x_max, '), switch_y: (', switch_y_min, switch_y_max, ')')
             
             if next_x_section > current_x_section:
-                current_x_start = self.section_list[next_x_section][0]['switch_x_min']
+                # current_x_start = self.section_list[next_x_section][0]['switch_x_min']
+                current_x_start = Cell.u(self.section_list[next_x_section].get_min_x())
+                # self.logger.info('current_x_start: %f', current_x_start)
                 current_x_section = next_x_section

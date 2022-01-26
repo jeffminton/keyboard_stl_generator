@@ -1,3 +1,9 @@
+
+
+
+
+
+
 from solid import *
 from solid.utils import *
 
@@ -6,35 +12,48 @@ import logging
 from cell import Cell
 
 class Switch(Cell):
-    
     def __init__(self, x, y, w, h, rotation = 0.0,  r_x_offset = 0.0, r_y_offset = 0.0, kerf = 0.0):
         super().__init__(x, y, w, h, rotation,  r_x_offset, r_y_offset, kerf)
 
         self.logger = logging.getLogger('Switch')
         self.logger.setLevel(logging.INFO)
 
+        if not self.logger.hasHandlers():
         # create console handler and set level to debug
-        ch = logging.StreamHandler()
-        ch.setLevel(logging.INFO)
+            ch = logging.StreamHandler()
+            ch.setLevel(logging.INFO)
 
-        # create formatter
-        formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+            # create formatter
+            formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
 
-        # add formatter to ch
-        ch.setFormatter(formatter)
+            # add formatter to ch
+            ch.setFormatter(formatter)
 
-        self.logger.addHandler(ch)
+            self.logger.addHandler(ch)
 
         self.solid = self.switch_cutout()
 
-        self.logger.debug('x: %f, y: %f, w: %f, h: %f, end_x: %f, end_y: %f', self.x, self.y, self.w, self.h, self.end_x, self.end_y)
+        self.logger.debug('x: %f, y: %f, w: %f, h: %f, end_x: %f, end_y: %f', self.x, self.y, self.w, self.h, self.end_x, self.end_y) 
+
+        self.section_neighbors = {
+            'right': None,
+            'left': None,
+            'up': None,
+            'down': None,
+            'neighbor_check_complete': False
+        }
+
+        # self.right = None
+        # self.left_in_section = None
+        # self.up_in_section = None
+        # self.down_in_section = None
+
+        # self.neighbors
     
     # def u(self, u_value):
     #     return u_value * self.SWITCH_SPACING
 
-    
     def switch_cutout(self):
-        
         poly_points = [
             [self.SQUARE_SIZE_HALF - self.kerf, -self.SQUARE_SIZE_HALF + self.kerf], # 0
             [self.SQUARE_SIZE_HALF - self.kerf, -self.CLIP_NOTCH_Y_MAX + self.kerf], # 1

@@ -92,13 +92,8 @@ def main():
     parser.add_argument('-p', '--parameter-file', metavar = 'parameters.json', help = 'A JSON file containing paramters for the object buing made', default = None, action=CheckExt({'json'}))
     parser.add_argument('-r', '--render', help = 'Render an STL from the generated scad file', default = False, action = 'store_true')
     parser.add_argument('-f', '--fragments', metavar = 'num_fragments', help = 'The number of fragments to be used when creating curves', default = 8)
-    # parser.add_argument('-f', '--fill-edges', help = 'Fill empty edges to ensure keyboard is a complete rectangle', default = False, action = 'store_true')
     parser.add_argument('-x', '--x-fill', help = 'Pad empty spaces to the left of keys', default = False, action = 'store_true')
     parser.add_argument('-b', '--blank-fill', help = 'Pad empty spaces to the left of keys', default = False, action = 'store_true')
-    # parser.add_argument('-b', '--build-area-break', metavar = 'sub_part_number', help = 'Pad empty spaces to the left of keys', default = -1 )
-    # parser.add_argument('-t', '--plate-thickness', type = float, metavar = 'plate_thickness', help = 'Plate thickness in milimeters', default = 1.51 ) 
-    # parser.add_argument('-p', '--plate-only', help = 'Only create the plate do not create case walls', default = False, action = 'store_true')
-    # parser.add_argument('-s', '--plate-supports', help = 'Create support grid on entire plate', default = False, action = 'store_true')
 
 
     args = parser.parse_args()
@@ -165,140 +160,56 @@ def main():
 
     keyboard.process_keyboard_layout(keyboard_layout_dict)
 
-
-
-
-    # max_x, min_y = keyboard.switch_collection.get_collection_bounds()
-    # logger.info('max_x: %d, min_y: %d', max_x, min_y)
-    # logger.info('build_x: %d, build_y: %d', keyboard.build_x, keyboard.build_y)
-
-    # x_parts = math.ceil(max_x / keyboard.build_x)
-    # y_parts = math.ceil(abs(min_y) / keyboard.build_y)
-    # logger.info('x_parts: %d, y_parts: %d', x_parts, y_parts)
-
-    # x_per_part = math.ceil(max_x / x_parts)
-    # y_per_part = math.floor(min_y / y_parts)
-    # logger.info('x_per_part: %d, y_per_part: %d', x_per_part, y_per_part)
-
-    # # Union all standard switch cutouts together
-    # current_x_start = 0.0
-    # current_y_start = 0.0
-    # current_x_section = 0
-    # current_y_section = 0
-    # next_x_section = 0
-    # next_y_section = 0
-    # section_list = [[]]
-
-    # build_area = left(keyboard.left_margin) ( back(keyboard.y_build_size - keyboard.top_margin) ( down(10) ( cube([keyboard.x_build_size, keyboard.y_build_size, 10]) ) ) )
-
-    # switch_object_dict = keyboard.switch_collection.get_collection_dict()
-    # for x in sorted(switch_object_dict.keys()):
-    #     # if len(section_list) < current_x_section:
-            
-    #     #     section_list.append([])
-    #     x_row = switch_object_dict[x]
-    #     for y in x_row.keys():
-    #         logger.debug('\tx: %d, y: %d', x, y)
-    #         logger.debug('x_row.keys(): %s', str(x_row.keys()))
-    #         # switch_cutouts += x_row[y].get_moved()
-    #         w = x_row[y].w
-    #         h = x_row[y].h
-            
-    #         switch_x_max = Cell.u(x + w) + keyboard.left_margin
-    #         switch_x_min = Cell.u(x) + keyboard.left_margin
-    #         switch_y_max = Cell.u(abs(y) + h) + keyboard.top_margin
-    #         switch_y_min = Cell.u(abs(y)) + keyboard.top_margin
-
-    #         temp_object = {
-    #             'x': x,
-    #             'y': y,
-    #             'w': w,
-    #             'h': h,
-    #             'switch_x_max': switch_x_max,
-    #             'switch_x_min': switch_x_min,
-    #             'switch_y_max': switch_y_max,
-    #             'switch_y_min': switch_y_min,
-    #             'object': x_row[y].get_moved()
-    #         }
-
-    #         if switch_x_max - current_x_start < keyboard.x_build_size:
-    #             # logger.info('current_x_section:', current_x_section)
-    #             section_list[current_x_section].append(temp_object)
-    #         elif switch_x_max - current_x_start > keyboard.x_build_size and next_x_section > current_x_section:
-    #             section_list[next_x_section].append(temp_object)
-    #         else:
-    #             # logger.info('switch_x_max:', switch_x_max, 'current_x_start:', current_x_start, 'switch_x_max - current_x_start:', switch_x_max - current_x_start, 'x_build_size:', x_build_size)
-    #             section_list.append([temp_object])
-    #             next_x_section = current_x_section + 1
-
-            
-    #         # logger.info('\tswitch_x: (', switch_x_min, ',', switch_x_max, '), switch_y: (', switch_y_min, switch_y_max, ')')
-        
-    #     if next_x_section > current_x_section:
-    #         current_x_start = section_list[next_x_section][0]['switch_x_min']
-    #         current_x_section = next_x_section
-
-
     assembly = keyboard.get_assembly()
 
     keyboard.split_keybaord()
 
 
-    for idx, section in enumerate(keyboard.section_list):
-        section_built = False
-        for i in range(len(section)):
-            max_x = 0.0
-            max_x_y = 0.0
-            max_x_min_y = 0.0
-            min_y = 0.0
-            min_y_x = 0.0
-            min_y_max_x = 0.0
-            for key in section:
-                if key['accounted_for'] == False:
-                    x_end = key['x'] + key['w']
-                    y_end = key['y'] - key['h']
-                    if x_end > max_x:
-                        max_x = x_end 
-                        max_x_min_y = y_end
-                    elif x_end == max_x and y_end < max_x_min_y:
-                        max_x_min_y = y_end
+    # for idx, section in enumerate(keyboard.section_list):
+    #     section_built = False
+    #     for i in range(len(section)):
+    #         max_x = 0.0
+    #         max_x_y = 0.0
+    #         max_x_min_y = 0.0
+    #         min_y = 0.0
+    #         min_y_x = 0.0
+    #         min_y_max_x = 0.0
+    #         for key in section:
+    #             if key['accounted_for'] == False:
+    #                 x_end = key['x'] + key['w']
+    #                 y_end = key['y'] - key['h']
+    #                 if x_end > max_x:
+    #                     max_x = x_end 
+    #                     max_x_min_y = y_end
+    #                 elif x_end == max_x and y_end < max_x_min_y:
+    #                     max_x_min_y = y_end
 
-                    if y_end < min_y:
-                        min_y = y_end
-                        min_y_max_x = x_end
-                    elif y_end == min_y and x_end > min_y_max_x:
-                        min_y_max_x = x_end
+    #                 if y_end < min_y:
+    #                     min_y = y_end
+    #                     min_y_max_x = x_end
+    #                 elif y_end == min_y and x_end > min_y_max_x:
+    #                     min_y_max_x = x_end
 
-            assembly += right(Cell.u(min_y_max_x)) ( forward(Cell.u(max_x_min_y)) ( down(30 / 2) ( cube([keyboard.support_bar_width, Cell.u(1), 30]) ) ) )
+    #         assembly += right(Cell.u(min_y_max_x)) ( forward(Cell.u(max_x_min_y)) ( down(30 / 2) ( cube([keyboard.support_bar_width, Cell.u(1), 30]) ) ) )
 
-            for key in section:
-                if key['accounted_for'] == False:
-                    x_end = key['x'] + key['w']
-                    y_end = key['y'] - key['h']
+    #         for key in section:
+    #             if key['accounted_for'] == False:
+    #                 x_end = key['x'] + key['w']
+    #                 y_end = key['y'] - key['h']
 
-                    if max_x_min_y == y_end:
-                        key['accounted_for'] = True
+    #                 if max_x_min_y == y_end:
+    #                     key['accounted_for'] = True
 
-            logger.info('section: %d, max_x: %f, max_x_min_y: %f, min_y: %f, min_y_max_x: %f', idx, max_x, max_x_min_y, min_y, min_y_max_x)
-            section_built = True
+    #         logger.info('section: %d, max_x: %f, max_x_min_y: %f, min_y: %f, min_y_max_x: %f', idx, max_x, max_x_min_y, min_y, min_y_max_x)
+    #         section_built = True
                 
 
     section_objects = union()
     for idx, section in enumerate(keyboard.section_list):
-        # logger.info('new section: len', len(section))
-        # logger.info('\tsection:', section)
-        min_section_x = min(section, key=lambda switch:switch['x'])['switch_x_min']
-        max_section_x = max(section, key=lambda switch:switch['x'])['switch_x_max']
-        min_section_y = min(section, key=lambda switch:abs(switch['y']))['switch_y_min']
-        max_section_y = max(section, key=lambda switch:abs(switch['y']))['switch_y_max']
-        logger.info('min_section_x: %d', min_section_x)
-        logger.info('max_section_x: %d', max_section_x)
-        logger.info('min_section_y: %d', min_section_y)
-        logger.info('max_section_y: %d', max_section_y)
-        for section_item in section:
-            section_objects += up(idx * 8) ( section_item['object'] )
+        section_objects += up(idx * 8) ( section.get_moved_union() )
 
     
+    keyboard.section_list[0].set_item_neighbors()
 
     assembly += section_objects
     # assembly += build_area

@@ -17,17 +17,18 @@ class Body():
         self.logger = logging.getLogger('Body')
         self.logger.setLevel(logging.INFO)
 
+        if not self.logger.hasHandlers():
         # create console handler and set level to debug
-        ch = logging.StreamHandler()
-        ch.setLevel(logging.INFO)
+            ch = logging.StreamHandler()
+            ch.setLevel(logging.INFO)
 
-        # create formatter
-        formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+            # create formatter
+            formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
 
-        # add formatter to ch
-        ch.setFormatter(formatter)
+            # add formatter to ch
+            ch.setFormatter(formatter)
 
-        self.logger.addHandler(ch)
+            self.logger.addHandler(ch)
 
         self.top_margin = top_margin
         self.bottom_margin = bottom_margin
