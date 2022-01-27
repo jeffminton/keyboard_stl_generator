@@ -88,6 +88,8 @@ class Keyboard():
 
         self.section_list = [ItemCollection()]
 
+        self.body = None
+
 
     def build_attr_from_dict(self, parameter_dict):
         for param in parameter_dict.keys():
@@ -153,12 +155,15 @@ class Keyboard():
                                     ry = size
                         
                     else:
+                        col_escaped = col.encode("unicode_escape").decode("utf-8")
+                        # self.logger.info('column value: %s', col_escaped)
+                        
                         x_offset = x
                         y_offset = -(y)
 
                         # Create switch cutout and support object without rotation
                         if rotation == 0.0:
-                            self.switch_collection.add_item(x_offset, y_offset, Switch(x_offset, y_offset, w, h, kerf = self.kerf))
+                            self.switch_collection.add_item(x_offset, y_offset, Switch(x_offset, y_offset, w, h, kerf = self.kerf, cell_value = col_escaped))
                             self.support_collection.add_item(x_offset, y_offset, Support(x_offset, y_offset, w, h, self.plate_thickness, self.support_bar_height, self.support_bar_width))
                             self.support_cutout_collection.add_item(x_offset, y_offset, SupportCutout(x_offset, y_offset, w, h, self.plate_thickness, self.support_bar_height, self.support_bar_width))
                             
@@ -185,7 +190,7 @@ class Keyboard():
     def get_assembly(self):
         assembly = union()
 
-        (max_x, min_y) = self.switch_collection.get_collection_bounds()
+        (min_x, max_x, max_y, min_y) = self.switch_collection.get_collection_bounds()
 
         self.switch_supports += self.support_collection.get_moved_union()
         self.switch_cutouts += self.switch_collection.get_moved_union()
@@ -205,8 +210,10 @@ class Keyboard():
 
         body = Body(self.top_margin, self.bottom_margin, self.left_margin, self.right_margin, self.case_height, self.plate_wall_thickness, self.plate_thickness, self.plate_corner_radius, self.plate_only, self.plate_supports)
 
-        body.set_dimensions(max_x, min_y)
-        assembly += body.case()
+        self.body = body
+
+        self.body.set_dimensions(max_x, min_y, min_x, max_y)
+        assembly += self.body.case()
 
         assembly -= self.switch_support_cutouts
         assembly += self.switch_supports
@@ -218,8 +225,8 @@ class Keyboard():
         return assembly
 
 
-    def split_keybaord(self):
-        (max_x, min_y) = self.switch_collection.get_collection_bounds()
+    def split_keyboard(self):
+        (min_x, max_x, max_y, min_y) = self.switch_collection.get_collection_bounds()
         self.logger.info('max_x: %d, min_y: %d', max_x, min_y)
         self.logger.info('build_x: %d, build_y: %d', self.build_x, self.build_y)
 
@@ -250,13 +257,14 @@ class Keyboard():
                 # switch_cutouts += x_row[y].get_moved()
                 w = x_row[y].w
                 h = x_row[y].h
+                cell_value = x_row[y].cell_value
                 
                 switch_x_max = Cell.u(x + w) + self.left_margin
                 switch_x_min = Cell.u(x) + self.left_margin
                 switch_y_max = Cell.u(abs(y) + h) + self.top_margin
                 switch_y_min = Cell.u(abs(y)) + self.top_margin
 
-                new_switch = Switch(x, y, w, h)
+                new_switch = Switch(x, y, w, h, cell_value = cell_value)
 
                 temp_object = {
                     'x': x,
@@ -290,3 +298,56 @@ class Keyboard():
                 current_x_start = Cell.u(self.section_list[next_x_section].get_min_x())
                 # self.logger.info('current_x_start: %f', current_x_start)
                 current_x_section = next_x_section
+
+        for idx, section in enumerate(self.section_list):
+            self.logger.info('Set Item neighbors for section %d', idx)
+            section.set_item_neighbors()
+
+
+    def get_section(self, section_number):
+        section = self.section_list[section_number]
+
+        self.logger.info('Get Section %d', section_number)
+
+        (min_x, max_x, max_y, min_y) = section.get_collection_bounds()
+
+        include_right_border = False
+        include_left_border = False
+        include_top_border = False
+        include_bottom_border = False
+
+        if max_x == self.body.max_x:
+            include_right_border = True
+
+        if min_x == self.body.min_x:
+            include_left_border = True
+        
+        if max_y == self.body.max_y:
+            include_top_border = True
+        
+        if min_y == self.body.min_y:
+            include_bottom_border = True
+            if abs(min_y) < self.build_y:
+                include_top_border = True
+
+        self.logger.info('\tinclude_right_border: %s', include_right_border)
+        self.logger.info('\tinclude_left_border: %s', include_left_border)
+        self.logger.info('\tinclude_top_border: %s', include_top_border)
+        self.logger.info('\tinclude_bottom_border: %s', include_bottom_border)
+
+        right_switch_edge = union()
+
+        if include_right_border == False:
+            self.logger.info('include_right_border')
+            # Draw non border edges
+            for rx in section.get_rx_list():
+                for ry in section.get_ry_list_in_rx(rx):
+                    for x in section.get_x_list_in_rx_ry(rx, ry):
+                        for y in section.get_y_list_in_rx_ry_x(x, rx, ry):
+                            item = section.get_item(x, y)
+                            self.logger.info('switch %s, has right neighbor %s', str(item), str(item.has_neighbor('right')))
+                            if item.has_neighbor('right') == False:
+                                self.logger.info('\tno right neighbor')
+                                right_switch_edge += down(self.support_bar_height * 3) ( right(Cell.u(item.x + item.w)) ( forward(Cell.u(item.y - item.h) ) ( cube([self.support_bar_width / 2, Cell.u(item.h), self.support_bar_height * 10]) ) ) )
+
+        return right_switch_edge

@@ -12,8 +12,8 @@ import logging
 from cell import Cell
 
 class Switch(Cell):
-    def __init__(self, x, y, w, h, rotation = 0.0,  r_x_offset = 0.0, r_y_offset = 0.0, kerf = 0.0):
-        super().__init__(x, y, w, h, rotation,  r_x_offset, r_y_offset, kerf)
+    def __init__(self, x, y, w, h, rotation = 0.0,  r_x_offset = 0.0, r_y_offset = 0.0, kerf = 0.0, cell_value = ''):
+        super().__init__(x, y, w, h, rotation,  r_x_offset, r_y_offset, kerf, cell_value = cell_value)
 
         self.logger = logging.getLogger('Switch')
         self.logger.setLevel(logging.INFO)
@@ -36,10 +36,26 @@ class Switch(Cell):
         self.logger.debug('x: %f, y: %f, w: %f, h: %f, end_x: %f, end_y: %f', self.x, self.y, self.w, self.h, self.end_x, self.end_y) 
 
         self.section_neighbors = {
-            'right': None,
-            'left': None,
-            'up': None,
-            'down': None,
+            'right': {
+                'has_neighbor': None,
+                'neighbor': None,
+                'offset': None
+            },
+            'left': {
+                'has_neighbor': None,
+                'neighbor': None,
+                'offset': None
+            },
+            'top': {
+                'has_neighbor': None,
+                'neighbor': None,
+                'offset': None
+            },
+            'bottom': {
+                'has_neighbor': None,
+                'neighbor': None,
+                'offset': None
+            },
             'neighbor_check_complete': False
         }
 
@@ -52,6 +68,9 @@ class Switch(Cell):
     
     # def u(self, u_value):
     #     return u_value * self.SWITCH_SPACING
+
+    def __str__(self):
+        return 'Switch: ' + super().__str__()
 
     def switch_cutout(self):
         poly_points = [
@@ -174,3 +193,33 @@ class Switch(Cell):
             return d
         else:
             return None
+
+    # def check_all_neighbors_set(self):
+
+
+    def set_neighbor(self, neighbor = None, neighbor_name = '', offset = 0.0, has_neighbor = True):
+        self.logger.info('nmeighbor_name: %s', neighbor_name)
+        self.section_neighbors[neighbor_name] = {
+                'has_neighbor': has_neighbor,
+                'neighbor': neighbor,
+                'offset': offset
+            }
+
+        if self.cell_value == 'K' and  has_neighbor == False:
+            self.logger.info('switch %s. set has neighbor %s', str(self), str(has_neighbor))
+            self.logger.info('neighbors: %s', str(self.section_neighbors))
+
+    def set_right_neighbor(self, neighbor = None, offset = 0.0, has_neighbor = True):
+        self.set_neighbor(neighbor, 'right', offset, has_neighbor)
+
+    def set_left_neighbor(self, neighbor = None, offset = 0.0, has_neighbor = True):
+        self.set_neighbor(neighbor, 'left', offset, has_neighbor)
+
+    def set_top_neighbor(self, neighbor = None, offset = 0.0, has_neighbor = True):
+        self.set_neighbor(neighbor, 'top', offset, has_neighbor)
+
+    def set_bottom_neighbor(self, neighbor = None, offset = 0.0, has_neighbor = True):
+        self.set_neighbor(neighbor, 'bottom', offset, has_neighbor)
+
+    def has_neighbor(self, neighbor_name = ''):
+        return self.section_neighbors[neighbor_name]['has_neighbor']

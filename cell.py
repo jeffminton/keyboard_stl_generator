@@ -32,7 +32,7 @@ class Cell:
     COSTAR_NOTCH_SWITCH_SIDE_X_OFFSET = 1.65
     SIDE_NOTCH_FAR_SIDE_X_OFFSET = 4.2
 
-    def __init__(self, x: float, y: float, w: float, h: float, rotation = 0.0,  r_x_offset = 0.0, r_y_offset = 0.0, kerf = 0.0):
+    def __init__(self, x: float, y: float, w: float, h: float, rotation = 0.0,  r_x_offset = 0.0, r_y_offset = 0.0, kerf = 0.0, cell_value = ''):
         
         self.logger = logging.getLogger('Cell')
         self.logger.setLevel(logging.INFO)
@@ -55,6 +55,11 @@ class Cell:
         self.w = w
         self.h = h
 
+        self.x_min = self.x
+        self.x_max = self.x + self.w
+        self.y_min = self.y - self.h
+        self.y_max = self.y
+
         self.end_x = self.x + self.w
         self.end_y = self.y - self.h
 
@@ -74,6 +79,8 @@ class Cell:
             self.vertical = True
 
         self.kerf = kerf
+        
+        self.cell_value = cell_value
 
         
             
@@ -81,6 +88,8 @@ class Cell:
     def u(u_value):
         return u_value * Cell.SWITCH_SPACING
 
+    def __str__(self):
+        return '%s (%f, %f)' % (self.cell_value, self.x, self.y)
     
     def get(self):
         return self.solid

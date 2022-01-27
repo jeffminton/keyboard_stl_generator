@@ -162,7 +162,16 @@ def main():
 
     assembly = keyboard.get_assembly()
 
-    keyboard.split_keybaord()
+    keyboard.split_keyboard()
+
+    section_objects = union()
+    for idx, section in enumerate(keyboard.section_list):
+        section_objects += up(idx * 8) ( section.get_moved_union() )
+    
+    for section_number in range(len(keyboard.section_list)):
+        assembly +=keyboard.get_section(section_number)
+
+    #  keyboard.get_section(0)
 
 
     # for idx, section in enumerate(keyboard.section_list):
@@ -204,12 +213,10 @@ def main():
     #         section_built = True
                 
 
-    section_objects = union()
-    for idx, section in enumerate(keyboard.section_list):
-        section_objects += up(idx * 8) ( section.get_moved_union() )
-
     
-    keyboard.section_list[0].set_item_neighbors()
+    
+    # for 
+    # keyboard.section_list[0].set_item_neighbors()
 
     assembly += section_objects
     # assembly += build_area

@@ -7,8 +7,8 @@ from cell import Cell
 
 class Support(Cell):
 
-    def __init__(self, x, y, w, h, plate_thickness, support_bar_height, support_bar_width, rotation = 0.0,  r_x_offset = 0.0, r_y_offset = 0.0, set_to_origin = True):
-        super().__init__(x, y, w, h, rotation,  r_x_offset, r_y_offset)
+    def __init__(self, x, y, w, h, plate_thickness, support_bar_height, support_bar_width, rotation = 0.0,  r_x_offset = 0.0, r_y_offset = 0.0, set_to_origin = True, cell_value = ''):
+        super().__init__(x, y, w, h, rotation,  r_x_offset, r_y_offset, cell_value = cell_value)
 
         self.logger = logging.getLogger('Support')
         self.logger.setLevel(logging.INFO)
@@ -32,6 +32,9 @@ class Support(Cell):
         self.support_bar_width = support_bar_width
 
         self.solid = self.switch_support()
+
+    def __str__(self):
+        return 'Support: ' + super().__str__()
 
     def switch_support_outline(self):
     

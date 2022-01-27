@@ -7,8 +7,8 @@ from cell import Cell
 
 class SupportCutout(Cell):
 
-    def __init__(self, x, y, w, h, plate_thickness, support_bar_height, support_bar_width, rotation = 0.0,  r_x_offset = 0.0, r_y_offset = 0.0, set_to_origin = False):
-        super().__init__(x, y, w, h, rotation,  r_x_offset, r_y_offset)
+    def __init__(self, x, y, w, h, plate_thickness, support_bar_height, support_bar_width, rotation = 0.0,  r_x_offset = 0.0, r_y_offset = 0.0, set_to_origin = False, cell_value = ''):
+        super().__init__(x, y, w, h, rotation,  r_x_offset, r_y_offset, cell_value = cell_value)
 
         self.logger = logging.getLogger('SupportCutout')
         self.logger.setLevel(logging.INFO)
@@ -35,6 +35,9 @@ class SupportCutout(Cell):
 
     # def u(self, u_value):
     #     return u_value * self.SWITCH_SPACING
+
+    def __str__(self):
+        return 'SupportCutout: ' + super().__str__()
 
     def support_cutout(self):    
         d = down(self.support_bar_height / 2) ( cube([self.u(self.w), self.u(self.h), self.support_bar_height + self.plate_thickness], center = True) )

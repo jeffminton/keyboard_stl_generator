@@ -108,23 +108,53 @@ class ItemCollection:
                 min_y = col_min_y    
         return min_y
 
+    # def get_collection_bounds(self):
+    #     min_y = 0
+    #     max_x = 0
+        
+    #     for x in self.get_x_list():
+    #         for y in self.get_y_list_in_x(x):
+    #             end_x = self.get_item(x, y).get_end_x()
+    #             end_y = self.get_item(x, y).get_end_y()
+    #             self.logger.debug('end_x: %f, end_y: %f', end_x, end_y)
+    #             if end_x > max_x:
+    #                 max_x = end_x
+
+    #             if end_y < min_y:
+    #                 min_y = end_y
+
+    #     self.logger.info('max_x: %f, min_y: %f', max_x, min_y)
+    #     return (max_x, min_y)
+
     def get_collection_bounds(self):
-        min_y = 0
-        max_x = 0
+        min_y = 1000
+        max_y = -1000
+        max_x = -1000
+        min_x = 1000
         
         for x in self.get_x_list():
             for y in self.get_y_list_in_x(x):
-                end_x = self.get_item(x, y).get_end_x()
-                end_y = self.get_item(x, y).get_end_y()
+                cell = self.get_item(x, y)
+                x = cell.x
+                end_x = cell.get_end_x()
+                y = cell.y
+                end_y = cell.get_end_y()
+
                 self.logger.debug('end_x: %f, end_y: %f', end_x, end_y)
+                if x < min_x:
+                    min_x = x
+
                 if end_x > max_x:
                     max_x = end_x
+
+                if y > max_y:
+                    max_y = y
 
                 if end_y < min_y:
                     min_y = end_y
 
-        self.logger.info('max_x: %f, min_y: %f', max_x, min_y)
-        return (max_x, min_y)
+        self.logger.info('min_x: %f, max_x: %f, max_y: %f, min_y: %f', min_x, max_x, max_y, min_y)
+        return (min_x, max_x, max_y, min_y)
 
 
     def get_moved_union(self, rx = 0.0, ry = 0.0):
@@ -152,9 +182,25 @@ class ItemCollection:
                         y_min = current_switch.y - current_switch.h
                         y_max = current_switch.y
 
-                        self.logger.info('x_min: %f, x_max: %f, y_min: %f, y_max: %s', x_min, x_max, y_min, y_max)
+                        # self.logger.info('x_min: %f, x_max: %f, y_min: %f, y_max: %s', x_min, x_max, y_min, y_max)
 
-                        right_neighbor_list = []
+                        neighbor_list_dict = {
+                            'right': [],
+                            'left': [],
+                            'top': [],
+                            'bottom': []
+                        }
+
+                        # right_neighbor_list = []
+                        # left_neighbor_list = []
+                        # top_neighbor_list = []
+                        # bottom_neighbor_list = []
+
+                        # right_neighbor_offset = 0
+                        # left_neighbor_offset = 0
+                        # top_neighbor_offset = 0
+                        # bottom_neighbor_offset = 0
+
                         for sib_rx in self.get_rx_list():
                             for sib_ry in self.get_ry_list_in_rx(sib_rx):
                                 for sib_x in self.get_x_list_in_rx_ry(sib_rx, sib_ry):
@@ -169,9 +215,44 @@ class ItemCollection:
                                         # self.logger.info('\tsib_x_min: %f, sib_x_max: %f, sib_y_min: %f, sib_y_max: %s', sib_x_min, sib_x_max, sib_y_min, sib_y_max)
 
                                         # check right neighbor
-                                        
-                                        if sib_y_max > y_min and sib_y_min < y_max and sib_x_min > x_max:
-                                            right_neighbor_list.append(sibling_switch)
-                                            self.logger.info('\tswitch (%f, %f) has right neightbor at (%f, %f)', x, y, sib_x, sib_y) 
+                                        if sib_y_max > y_min and sib_y_min < y_max and sib_x_min >= x_max:
+                                            neighbor_list_dict['right'].append(sibling_switch)
+                                            # right_neighbor_offset = sib_x_min - x_max
+                                        # check left neighbor
+                                        if sib_y_max > y_min and sib_y_min < y_max and sib_x_max <= x_min:
+                                            neighbor_list_dict['left'].append(sibling_switch)
+                                            # left_neighbor_offset = x_min - sib_x_max
+                                        # check top neighbor
+                                        if sib_x_max > x_min and sib_x_min < x_max and sib_y_min >= y_max:
+                                            neighbor_list_dict['top'].append(sibling_switch)
+                                            # top_neighbor_offset = sib_y_min - y_max
+                                        # check bottom neighbor
+                                        if sib_x_max > x_min and sib_x_min < x_max and sib_y_max <= y_min:
+                                            neighbor_list_dict['bottom'].append(sibling_switch)
+                                            # bottom_neighbor_offset = y_min - sib_y_max
                         
-                        self.logger.info('\t\tright_neighbor_list: %s', str(right_neighbor_list))
+
+                        for direction in neighbor_list_dict.keys():
+                            self.logger.info('direction: %s', direction)
+                            offset = 0.0
+                            
+                            if len(neighbor_list_dict[direction]) > 0: 
+                                closest_neighbor = min(neighbor_list_dict[direction], key=lambda item: item.x)
+
+                                if direction == 'right':
+                                    offset = closest_neighbor.x_min - x_max
+                                elif direction == 'left':
+                                    offset = x_min - closest_neighbor.x_max
+                                elif direction == 'top':
+                                    offset = closest_neighbor.y_min - y_max
+                                elif direction == 'bottom':
+                                    offset = y_min - closest_neighbor.y_max
+
+                                current_switch.set_neighbor(neighbor = closest_neighbor, neighbor_name = direction, offset = offset)
+                            else:
+                                self.logger.info('set switch %s no neighbor %s', str(current_switch), direction)
+                                closest_neighbor = None
+                                current_switch.set_neighbor(neighbor_name = direction, has_neighbor = False)
+                            
+                        # self.logger.debug('current_switch: %s', str(current_switch))
+                        # self.logger.debug('\tcurrent_switch section_neighbors: %s', str(current_switch.section_neighbors))

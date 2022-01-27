@@ -41,8 +41,10 @@ class Body():
         self.plate_only = plate_only
         self.plate_supports = plate_supports
 
+        self.min_x = 0.0
         self.max_x = 0.0
         self.min_y = 0.0
+        self.max_y = 0.0
 
         self.real_max_x = 0.0
         self.real_max_y = 0.0
@@ -51,11 +53,13 @@ class Body():
         self.support_bar_width = support_bar_width
     
 
-    def set_dimensions(self, max_x, min_y):
+    def set_dimensions(self, max_x, min_y, min_x, max_y):
 
         self.max_x = max_x
+        self.max_x = max_x
         self.min_y = min_y
-        self.logger.info('max_x: %d, min_y: %s', self.max_x, self.min_y)
+        self.max_y = max_y
+        self.logger.info('min_x: %f, max_x: %f, max_y: %f, min_y: %f', self.min_x, self.max_x, self.max_y, self.min_y)
 
         # Get rhe calculated real max and y sizes of the board
         self.real_max_x = Cell.u(self.max_x)
