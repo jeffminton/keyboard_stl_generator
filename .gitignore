@@ -130,5 +130,5 @@ dmypy.json
 
 
 
-.scad
-.stl
+*.scad
+*.stl
