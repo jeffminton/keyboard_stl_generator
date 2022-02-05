@@ -1,9 +1,3 @@
-
-
-
-
-
-
 from solid import *
 from solid.utils import *
 
@@ -35,26 +29,26 @@ class Switch(Cell):
 
         self.logger.debug('x: %f, y: %f, w: %f, h: %f, end_x: %f, end_y: %f', self.x, self.y, self.w, self.h, self.end_x, self.end_y) 
 
-        self.section_neighbors = {
+        self.global_neighbors = {
             'right': {
-                'has_neighbor': None,
-                'neighbor': None,
-                'offset': None
             },
             'left': {
-                'has_neighbor': None,
-                'neighbor': None,
-                'offset': None
             },
             'top': {
-                'has_neighbor': None,
-                'neighbor': None,
-                'offset': None
             },
             'bottom': {
-                'has_neighbor': None,
-                'neighbor': None,
-                'offset': None
+            },
+            'neighbor_check_complete': False
+        }
+
+        self.local_neighbors = {
+            'right': {
+            },
+            'left': {
+            },
+            'top': {
+            },
+            'bottom': {
             },
             'neighbor_check_complete': False
         }
@@ -69,8 +63,41 @@ class Switch(Cell):
     # def u(self, u_value):
     #     return u_value * self.SWITCH_SPACING
 
+    def neighbors_formatted(self, obj, indent = 2, current_indent = 0):
+        current_output = ''
+        current_indent_str = ' ' * current_indent
+        if isinstance(obj, dict):
+            for i, key in enumerate(obj.keys()):
+                value = obj[key]
+                current_output += current_indent_str + key + ': '
+
+                if isinstance(value, dict):
+                    current_output += '{\n'
+
+                current_output += str(self.neighbors_formatted(value, indent, current_indent + indent))
+
+
+                if isinstance(value, dict):
+                    current_output += current_indent_str+ '}'
+
+                if i < len(obj.keys()) - 1:
+                    current_output += ','
+
+                current_output += '\n'
+
+        else:
+            current_output += str(obj)
+
+        return current_output
+
+
     def __str__(self):
         return 'Switch: ' + super().__str__()
+
+    def __repr__(self):
+        global_neighbors_json = self.neighbors_formatted(self.global_neighbors, indent=4, current_indent=10)
+        local_neighbors_json = self.neighbors_formatted(self.local_neighbors, indent=4, current_indent=10)
+        return 'Switch: ' + super().__str__() + '\nglobal neighbors: \n' + global_neighbors_json + '\local neighbors: \n' + local_neighbors_json
 
     def switch_cutout(self):
         poly_points = [
@@ -197,29 +224,39 @@ class Switch(Cell):
     # def check_all_neighbors_set(self):
 
 
-    def set_neighbor(self, neighbor = None, neighbor_name = '', offset = 0.0, has_neighbor = True):
-        self.logger.info('nmeighbor_name: %s', neighbor_name)
-        self.section_neighbors[neighbor_name] = {
-                'has_neighbor': has_neighbor,
-                'neighbor': neighbor,
-                'offset': offset
-            }
+    def set_neighbor(self, neighbor = None, neighbor_name = '', offset = 0.0, has_neighbor = True, neighbor_group = 'local'):
+        
+        temp_dict = {
+            'has_neighbor': has_neighbor,
+            'neighbor': neighbor,
+            'offset': offset
+        }
+        
+        if neighbor_group == 'local':
+            self.local_neighbors[neighbor_name] = temp_dict
+        elif neighbor_group == 'global':
+            self.global_neighbors[neighbor_name] = temp_dict
+        
+    def set_right_neighbor(self, neighbor = None, offset = 0.0, has_neighbor = True, neighbor_group = 'local'):
+        self.set_neighbor(neighbor, 'right', offset, has_neighbor, neighbor_group)
 
-        if self.cell_value == 'K' and  has_neighbor == False:
-            self.logger.info('switch %s. set has neighbor %s', str(self), str(has_neighbor))
-            self.logger.info('neighbors: %s', str(self.section_neighbors))
+    def set_left_neighbor(self, neighbor = None, offset = 0.0, has_neighbor = True, neighbor_group = 'local'):
+        self.set_neighbor(neighbor, 'left', offset, has_neighbor, neighbor_group)
 
-    def set_right_neighbor(self, neighbor = None, offset = 0.0, has_neighbor = True):
-        self.set_neighbor(neighbor, 'right', offset, has_neighbor)
+    def set_top_neighbor(self, neighbor = None, offset = 0.0, has_neighbor = True, neighbor_group = 'local'):
+        self.set_neighbor(neighbor, 'top', offset, has_neighbor, neighbor_group)
 
-    def set_left_neighbor(self, neighbor = None, offset = 0.0, has_neighbor = True):
-        self.set_neighbor(neighbor, 'left', offset, has_neighbor)
+    def set_bottom_neighbor(self, neighbor = None, offset = 0.0, has_neighbor = True, neighbor_group = 'local'):
+        self.set_neighbor(neighbor, 'bottom', offset, has_neighbor, neighbor_group)
 
-    def set_top_neighbor(self, neighbor = None, offset = 0.0, has_neighbor = True):
-        self.set_neighbor(neighbor, 'top', offset, has_neighbor)
-
-    def set_bottom_neighbor(self, neighbor = None, offset = 0.0, has_neighbor = True):
-        self.set_neighbor(neighbor, 'bottom', offset, has_neighbor)
-
-    def has_neighbor(self, neighbor_name = ''):
-        return self.section_neighbors[neighbor_name]['has_neighbor']
+    def has_neighbor(self, neighbor_name = '', neighbor_group = 'local'):
+        if neighbor_group == 'local':
+            return self.local_neighbors[neighbor_name]['has_neighbor']
+        elif neighbor_group == 'global':
+            return self.global_neighbors[neighbor_name]['has_neighbor']
+    
+    def get_neighbor_offset(self, neighbor_name = '', neighbor_group = 'local'):
+        if neighbor_group == 'local':
+            return self.local_neighbors[neighbor_name]['offset']
+        elif neighbor_group == 'global':
+            return self.global_neighbors[neighbor_name]['offset']

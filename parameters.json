@@ -11,11 +11,23 @@
     "bottom_margin" : 8,
     "left_margin" : 8,
     "right_margin" : 8,
-    "case_height" : 10,
-    "plate_wall_thickness" : 2.0,
-    "plate_thickness" : 1.511,
+    "case_height" : 20,
+    "plate_wall_thickness" : 3.0,
+    "plate_thickness" : 1.311,
     "plate_corner_radius" : 4,
 
     "support_bar_height" : 3.0,
-    "support_bar_width" : 1.0
+    "support_bar_width" : 1.0,
+
+    "tilt": 5,
+
+    "cable_hole": true,
+    "hole_width": 10,
+    "hole_height": 10,
+
+    "screw_count": 6,
+    "screw_diameter": 4,
+    "screw_edge_inset": 6.5,
+
+    "bottom_cover_thickness": 2
 }

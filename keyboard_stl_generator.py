@@ -6,18 +6,11 @@ import math
 import re
 import logging
 import os
-import os.path
+# import os.path
 
 from solid import *
 from solid.utils import *
 
-from switch import Switch
-from support import Support
-from support_cutout import SupportCutout
-from cell import Cell
-from item_collection import ItemCollection
-from rotation_collection import RotationCollection
-from body import Body
 from keyboard import Keyboard
 
 logger = logging.getLogger('keyboard_layout_generator')
@@ -34,40 +27,6 @@ formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
 ch.setFormatter(formatter)
 
 logger.addHandler(ch)
-
-# # #[Model Features]#
-# plate_only = 0
-
-
-# # #[Printer Info]#
-# x_build_size = 200
-# y_build_size = 200
-# part_number = 1
-
-# # #[Switch Adjustment Dimensions]#
-# kerf = 0.00
-
-# # #[Holder Dimensions]# 
-# top_margin = 8
-# bottom_margin = 8
-# left_margin = 8
-# right_margin = 8
-# case_height = 10
-# plate_wall_thickness = 2.0
-# plate_thickness = 1.511
-# plate_corner_radius = 4
-
-# # #[Support Bars]#  
-# support_bar_height = 3.0
-# support_bar_width = 1.0
-
-
-# support_bar_tile_width = support_bar_width / 2
-
-
-# build_x = math.floor(x_build_size / Cell.SWITCH_SPACING)
-# build_y = math.floor(y_build_size / Cell.SWITCH_SPACING)
-
 
 
 def CheckExt(choices):
@@ -91,16 +50,23 @@ def main():
     parser.add_argument('-o', '--output-file', metavar = 'object_name.scad', help = 'A path to a file to store the generated open scad file', action=CheckExt({'scad'}))
     parser.add_argument('-p', '--parameter-file', metavar = 'parameters.json', help = 'A JSON file containing paramters for the object buing made', default = None, action=CheckExt({'json'}))
     parser.add_argument('-r', '--render', help = 'Render an STL from the generated scad file', default = False, action = 'store_true')
-    parser.add_argument('-f', '--fragments', metavar = 'num_fragments', help = 'The number of fragments to be used when creating curves', default = 8)
+    parser.add_argument('-f', '--fragments', metavar = 'num_fragments', help = 'The number of fragments to be used when creating curves', type = int, default = 8)
+    parser.add_argument('-s', '--section', metavar = 'section_num', help = 'The number of the section that should be built', type = int, default = -1)
     parser.add_argument('-x', '--x-fill', help = 'Pad empty spaces to the left of keys', default = False, action = 'store_true')
     parser.add_argument('-b', '--blank-fill', help = 'Pad empty spaces to the left of keys', default = False, action = 'store_true')
-
+    
+    rendered_object_dict = {
+        'top': None,
+        'bottom': None,
+        'all': None
+    }
 
     args = parser.parse_args()
-    # logger.info(vars(args))
+    # logger.debug(vars(args))
 
     layout_json_file_name = args.input_file
 
+    # Generate Output Filenames from Input Filneamr
     if args.output_file is None:
         scad_output_file_name = layout_json_file_name.replace('.json', '_out.scad')
         stl_output_file_name = layout_json_file_name.replace('.json', '_out.stl')
@@ -108,15 +74,19 @@ def main():
         scad_output_file_name = args.output_file
         stl_output_file_name = scad_output_file_name.replace('.scad', '.stl')
 
+    if args.section > -1:
+        scad_output_file_name = scad_output_file_name.replace('_out.scad', '_section_%d_out.scad' % (args.section))
+        stl_output_file_name = stl_output_file_name.replace('_out.stl', '_section_%d_out.stl' % (args.section))
+
+
     logger.info('Read layout from file %s write generated scad to %s. ', layout_json_file_name, scad_output_file_name)
 
+    # Set fragments per circle
     FRAGMENTS = args.fragments
     logger.info('\tFragments: %d', FRAGMENTS)
 
     json_key_pattern = '([{,])([xywha1]+):'
     json_key_replace = '\\1"\\2":'
-
-    # modifier_include_list = ['x', 'y', 'w', 'h', 'r', 'rx', 'ry']
 
     f = open(layout_json_file_name)
 
@@ -124,6 +94,7 @@ def main():
 
     keyboard_layout_dict = None
 
+    # Load keyboard layout dictionary
     try:
         keyboard_layout_dict = json.loads(keyboard_layout)
         logger.warning('Valid Json Parsed')
@@ -133,14 +104,12 @@ def main():
         keyboard_layout = re.sub(json_key_pattern, json_key_replace, keyboard_layout)
         try:
             keyboard_layout_dict = json.loads(keyboard_layout)
-            logger.warning('Initial Json Invalid. Json modified and parsed')
+            logger.info('Initial Json Invalid. Json modified and parsed')
         except:
             logger.error('Failed to parse json after attempt at correction.')
             raise
 
     logger.debug('keyboard_layout_dict:', keyboard_layout_dict)
-
-    keyboard = Keyboard()
 
     parameter_dict = None
     # Read parameter file
@@ -156,77 +125,47 @@ def main():
             logger.error('Failed to parse json after attempt at correction.')
             raise
 
-        keyboard.set_parameter_dict(parameter_dict)
+    
+    # Create Keyboard instance
+    keyboard = Keyboard(parameter_dict)
 
+    # Set parameters on Keyboard object
+    # keyboard.set_parameter_dict(parameter_dict)
+
+    if args.section > -1:
+        keyboard.set_section(args.section)
+
+    # Process the keyboar layout object
     keyboard.process_keyboard_layout(keyboard_layout_dict)
 
-    assembly = keyboard.get_assembly()
+    # Get the full keyboard assembly
+    # rendered_object_dict['top'] = keyboard.get_assembly(top = True)
+    # rendered_object_dict['bottom'] = keyboard.get_assembly(bottom = True)
+    # rendered_object_dict['all'] = keyboard.get_assembly(all = True)
 
-    keyboard.split_keyboard()
-
-    section_objects = union()
-    for idx, section in enumerate(keyboard.section_list):
-        section_objects += up(idx * 8) ( section.get_moved_union() )
-    
-    for section_number in range(len(keyboard.section_list)):
-        assembly +=keyboard.get_section(section_number)
-
-    #  keyboard.get_section(0)
+    rendered_object_dict['top'] = union()
+    for section in range(keyboard.get_section_count()):
+        keyboard.set_section(section)
+        rendered_object_dict['top'] += up(10 * section) ( keyboard.get_assembly(top = True) )
 
 
-    # for idx, section in enumerate(keyboard.section_list):
-    #     section_built = False
-    #     for i in range(len(section)):
-    #         max_x = 0.0
-    #         max_x_y = 0.0
-    #         max_x_min_y = 0.0
-    #         min_y = 0.0
-    #         min_y_x = 0.0
-    #         min_y_max_x = 0.0
-    #         for key in section:
-    #             if key['accounted_for'] == False:
-    #                 x_end = key['x'] + key['w']
-    #                 y_end = key['y'] - key['h']
-    #                 if x_end > max_x:
-    #                     max_x = x_end 
-    #                     max_x_min_y = y_end
-    #                 elif x_end == max_x and y_end < max_x_min_y:
-    #                     max_x_min_y = y_end
+    # Remove all sections but the one desired if section option used
+    # if args.section > -1:
+    #     assembly -= keyboard.get_section_remove_block(args.section)
 
-    #                 if y_end < min_y:
-    #                     min_y = y_end
-    #                     min_y_max_x = x_end
-    #                 elif y_end == min_y and x_end > min_y_max_x:
-    #                     min_y_max_x = x_end
-
-    #         assembly += right(Cell.u(min_y_max_x)) ( forward(Cell.u(max_x_min_y)) ( down(30 / 2) ( cube([keyboard.support_bar_width, Cell.u(1), 30]) ) ) )
-
-    #         for key in section:
-    #             if key['accounted_for'] == False:
-    #                 x_end = key['x'] + key['w']
-    #                 y_end = key['y'] - key['h']
-
-    #                 if max_x_min_y == y_end:
-    #                     key['accounted_for'] = True
-
-    #         logger.info('section: %d, max_x: %f, max_x_min_y: %f, min_y: %f, min_y_max_x: %f', idx, max_x, max_x_min_y, min_y, min_y_max_x)
-    #         section_built = True
-                
-
-    
-    
-    # for 
-    # keyboard.section_list[0].set_item_neighbors()
-
-    assembly += section_objects
-    # assembly += build_area
-
-    scad_render_to_file(assembly, scad_output_file_name, file_header=f'$fn = {FRAGMENTS};')
-    # scad_render_to_file(assembly, scad_output_file_name)
-
-    if args.render:
-        logger.info('Render STL from SCAD')
-        os.system('openscad -o %s  %s' % (stl_output_file_name, scad_output_file_name))
+    for part_name in rendered_object_dict.keys():
+        if rendered_object_dict[part_name] is not None:
+            scad_file_name = scad_output_file_name.replace('_out.scad', '_%s_out.scad' % (part_name) )
+            logger.info('Generate scad file with name %s', scad_file_name)
+            # Generate SCAD file from assembly
+            scad_render_to_file(rendered_object_dict[part_name], scad_file_name, file_header=f'$fn = {FRAGMENTS};')
+            
+            # Render STL if option is chosen
+            if args.render:
+                logger.info('Render STL from SCAD')
+                stl_file_name = stl_output_file_name.replace('_out.stl', '_%s_out.stl' % (part_name) )
+                logger.info('Generate stl file with name %s from %s', stl_file_name, scad_file_name)
+                os.system('openscad -o %s  %s' % (stl_file_name, scad_file_name))
 
 
 if __name__ == "__main__":
