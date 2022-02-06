@@ -16,7 +16,7 @@ from solid.utils import *
 
 from keyboard import Keyboard
 
-logger = logging.getLogger('keyboard_layout_generator')
+logger = logging.getLogger('generator')
 logger.setLevel(logging.INFO)
 
 # create console handler and set level to info
@@ -63,43 +63,51 @@ def main():
     args = parser.parse_args()
     # logger.debug(vars(args))
 
-    layout_json_file_name = args.input_file
+    # Create Path object from input file argument
+    input_file_path = Path(args.input_file)
 
-    # Generate Output Filenames from Input Filename
-    file_name_parts = layout_json_file_name.split('/')
-    base_path = '/'.join(file_name_parts[:-1]) + '/'
-    scad_folder_path = base_path + 'scad/'
-    stl_folder_path = base_path + 'stl/'
+    # Get base folder path
+    base_path = input_file_path.parent
 
-    if os.path.isdir(scad_folder_path) == False:
-        os.mkdir(scad_folder_path)
-
-    if os.path.isdir(stl_folder_path) == False:
-        os.mkdir(stl_folder_path)
-
-    file_name_only = file_name_parts[-1]
+    # Get input file name onle
+    file_name_only = input_file_path.name
     
-    base_file_name = '.'.join(file_name_only.split('.')[:-1])
+    # Get layout name from file name
+    layout_name = input_file_path.stem
 
-    logger.info('file_name_parts: %s', str(file_name_parts))
+    # Generate output scad and stl output folder paths
+    output_base_folder = base_path / layout_name
+    scad_folder_path = output_base_folder / 'scad'
+    stl_folder_path = output_base_folder / 'stl'
+
+    if output_base_folder.is_dir() == False:
+        output_base_folder.mkdir()
+
+    if scad_folder_path.is_dir() == False:
+        scad_folder_path.mkdir()
+
+    if stl_folder_path.is_dir() == False:
+        stl_folder_path.mkdir()
+
+    logger.info('layout_name: %s', str(layout_name))
     logger.info('base_path: %s', str(base_path))
     logger.info('file_name_only: %s', str(file_name_only))
-    logger.info('base_file_name: %s', str(base_file_name))
+    
 
     scad_postfix = '.scad'
     stl_postfix  = '.stl'
 
-    # scad_output_file_name = base_file_name + scad_postfix
-    # stl_output_file_name = base_file_name + stl_postfix
+    # scad_output_file_name = layout_name + scad_postfix
+    # stl_output_file_name = layout_name + stl_postfix
 
     section_postfix = ''
     if args.section > -1:
         section_postfix = '_section_%d' % (args.section)
 
-    scad_file_name = scad_folder_path + base_file_name + section_postfix + scad_postfix
-    stl_file_name = stl_folder_path + base_file_name + section_postfix + stl_postfix
+    scad_file_name = scad_folder_path / (layout_name + section_postfix + scad_postfix)
+    stl_file_name = stl_folder_path / (layout_name + section_postfix + stl_postfix)
 
-    logger.info('Read layout from file %s write generated scad to %s. ', layout_json_file_name, scad_file_name)
+    logger.info('Read layout from file %s write generated scad to %s. ', input_file_path, scad_file_name)
 
     # Set fragments per circle
     FRAGMENTS = args.fragments
@@ -108,7 +116,7 @@ def main():
     json_key_pattern = '([{,])([xywha1]+):'
     json_key_replace = '\\1"\\2":'
 
-    f = open(layout_json_file_name)
+    f = open(input_file_path)
 
     keyboard_layout = f.read()
 
@@ -170,20 +178,22 @@ def main():
         rendered_object_dict[args.section]['bottom'] = keyboard.get_assembly(bottom = True)
         rendered_object_dict[args.section]['all'] = keyboard.get_assembly(all = True)
     elif args.section == -2:
-        for section in range(keyboard.get_section_count()):
+        for section in range(keyboard.get_top_section_count()):
             keyboard.set_section(section)
             rendered_object_dict[section] = {}
             rendered_object_dict[section]['top'] = keyboard.get_assembly(top = True)
-            rendered_object_dict[section]['bottom'] = keyboard.get_assembly(bottom = True)
+            if section < keyboard.get_bottom_section_count():
+                rendered_object_dict[section]['bottom'] = keyboard.get_assembly(bottom = True)
             rendered_object_dict[section]['all'] = keyboard.get_assembly(all = True)
     elif args.section == -3:
         rendered_object_dict[-1] = {}
         rendered_object_dict[-1]['top'] = union()
         rendered_object_dict[-1]['bottom'] = union()
-        for section in range(keyboard.get_section_count()):
+        for section in range(keyboard.get_top_section_count()):
             keyboard.set_section(section)
             rendered_object_dict[-1]['top'] += up(5 * section) ( keyboard.get_assembly(top = True) )
-            rendered_object_dict[-1]['bottom'] += up(5 * section) ( keyboard.get_assembly(bottom = True) )
+            if section < keyboard.get_bottom_section_count():
+                rendered_object_dict[-1]['bottom'] += up(5 * section) ( keyboard.get_assembly(bottom = True) )
 
 
     # Remove all sections but the one desired if section option used
@@ -199,12 +209,12 @@ def main():
 
         for part_name in rendered_object_dict[section].keys():
             part_name_formatted = '_' + part_name
-            scad_file_name = scad_folder_path + base_file_name + section_postfix + part_name_formatted + scad_postfix
-            stl_file_name = stl_folder_path + base_file_name + section_postfix + part_name_formatted + stl_postfix
+            scad_file_name = scad_folder_path / (layout_name + section_postfix + part_name_formatted + scad_postfix)
+            stl_file_name = stl_folder_path / (layout_name + section_postfix + part_name_formatted + stl_postfix)
             if rendered_object_dict[section][part_name] is not None:
                 logger.info('Generate scad file with name %s', scad_file_name)
                 # Generate SCAD file from assembly
-                scad_render_to_file(rendered_object_dict[section][part_name], scad_file_name, file_header=f'$fn = {FRAGMENTS};')
+                # scad_render_to_file(rendered_object_dict[section][part_name], scad_file_name, file_header=f'$fn = {FRAGMENTS};')
                 
                 # Render STL if option is chosen
                 if args.render:
@@ -215,7 +225,7 @@ def main():
                     openscad_command_list = ['openscad', '-o', '%s' % (stl_file_name), '%s' % (scad_file_name)]
                     # openscad_command = 'openscad -o %s  %s' % (stl_file_name, scad_file_name)
 
-                    subprocess_dict[stl_file_name] = subprocess.Popen(openscad_command_list)
+                    # subprocess_dict[stl_file_name] = subprocess.Popen(openscad_command_list)
 
                     # os.system(openscad_command)
 

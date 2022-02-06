@@ -200,7 +200,7 @@ class Keyboard():
 
         # create sections of the keyboard for usin in splitting for printing
         self.split_keyboard()
-        self.logger.info('Sectons In Board: %d', self.get_section_count())
+        self.logger.info('Sectons In Top: %d', self.get_top_section_count())
 
     def get_assembly(self, top = False, bottom = False, all = True):
         # Init top_assembly and bottom_assembly objects
@@ -225,7 +225,7 @@ class Keyboard():
         self.switch_support_cutouts += support_cutout_collection.get_moved_union()
 
         (rotated_min_x, rotated_max_x, rotated_max_y, rotated_min_y) = self.switch_rotation_collection.get_real_collection_bounds()
-        self.logger.info('rotation_bounds: rotated_min_x: %f, rotated_max_x: %f, rotated_max_y: %f, rotated_min_y: %f', rotated_min_x, rotated_max_x, rotated_max_y, rotated_min_y)
+        self.logger.debug('rotation_bounds: rotated_min_x: %f, rotated_max_x: %f, rotated_max_y: %f, rotated_min_y: %f', rotated_min_x, rotated_max_x, rotated_max_y, rotated_min_y)
 
         if rotated_min_x < min_x:
             min_x = rotated_min_x
@@ -291,7 +291,8 @@ class Keyboard():
         top_assembly = up(self.body.case_height_base_removed + (self.plate_thickness / 2)) ( forward(Cell.u(abs(min_y)) + self.bottom_margin) ( right(self.left_margin) ( top_assembly ) ) )
         bottom_assembly = up(self.body.case_height_base_removed + (self.plate_thickness / 2)) ( forward(Cell.u(abs(min_y)) + self.bottom_margin) ( right(self.left_margin) ( bottom_assembly ) ) )
         body_block = up(self.body.case_height_base_removed + (self.plate_thickness / 2)) ( forward(Cell.u(abs(min_y)) + self.bottom_margin) ( right(self.left_margin) ( body_block ) ) )
-        bottom_section_inclusion = up(self.body.case_height_base_removed + (self.plate_thickness / 2)) ( forward(Cell.u(abs(min_y)) + self.bottom_margin) ( right(self.left_margin) ( bottom_section_inclusion ) ) )
+        if self.desired_section_number > -1:
+            bottom_section_inclusion = up(self.body.case_height_base_removed + (self.plate_thickness / 2)) ( forward(Cell.u(abs(min_y)) + self.bottom_margin) ( right(self.left_margin) ( bottom_section_inclusion ) ) )
 
         # Create block that will remove material to make case bottom flat
         bottom_diff_plate = down(self.body.case_height_extra * 2) ( back(self.body.real_max_y / 2) ( left(self.body.real_max_x / 2) ( cube([self.body.real_max_x * 2, self.body.real_max_y * 2, self.body.case_height_extra * 2 ]) ) ) )
@@ -314,7 +315,8 @@ class Keyboard():
         # bottom_assembly += self.body.bottom_cover()
         # bottom_assembly += body_block
         bottom_assembly += self.body.bottom_cover() * body_block
-        bottom_assembly *= bottom_section_inclusion
+        if self.desired_section_number > -1:
+            bottom_assembly *= bottom_section_inclusion
 
         # # TEST ####
         # # Union together all rotated supports
@@ -580,14 +582,14 @@ class Keyboard():
 
         self.logger.debug('Get Section %d', section_number)
 
-        self.logger.info('real_case_width: %f', self.body.real_case_width)
-        self.logger.info('real_case_height: %f', self.body.real_case_height)
+        self.logger.debug('real_case_width: %f', self.body.real_case_width)
+        self.logger.debug('real_case_height: %f', self.body.real_case_height)
 
         self.logger.info('self.body.bottom_section_count: %f', self.body.bottom_section_count)
 
         section_size = self.body.real_case_width / self.body.bottom_section_count
 
-        self.logger.info('section_size: %f', section_size)
+        self.logger.debug('section_size: %f', section_size)
 
         start_x = section_size * section_number
         end_x = start_x + section_size
@@ -603,7 +605,7 @@ class Keyboard():
         height = self.body.real_case_height * 2
         thickness = self.body.case_height_extra_fill * 2
 
-        self.logger.info('section: %d, x_offset: %f, width: %f, y_offset: %f', section_number, x_offset, width, y_offset)
+        self.logger.debug('section: %d, x_offset: %f, width: %f, y_offset: %f', section_number, x_offset, width, y_offset)
 
         return right(x_offset) ( back(y_offset) ( down(z_offset) ( cube([width, height, thickness]) ) ) )
 
@@ -626,7 +628,7 @@ class Keyboard():
 
             # Left side of section cutout is within a screw hole support
             if start_x > screw_hole_min_x and start_x < screw_hole_max_x:
-                self.logger.info('Left side in support: old start_x: %f', start_x)
+                self.logger.debug('Left side in support: old start_x: %f', start_x)
                 # Left sie of section cutout is in the middle of a screw hole
                 # move the start to the right
                 if start_x >= screw_x:
@@ -634,11 +636,11 @@ class Keyboard():
                 if start_x < screw_x:
                     start_x = screw_hole_min_x
 
-                self.logger.info('Left side in support: new start_x: %f', start_x)
+                self.logger.debug('Left side in support: new start_x: %f', start_x)
 
             # Right side of section cutout is within a screw hole support
             if end_x > screw_hole_min_x and end_x < screw_hole_max_x:
-                self.logger.info('Right side in support: old end_x: %f', end_x)
+                self.logger.debug('Right side in support: old end_x: %f', end_x)
                 # Right side of section cutout is in the middle of a screw hole
                 # move the end to the right
                 if end_x >= screw_x:
@@ -646,7 +648,7 @@ class Keyboard():
                 if end_x < screw_x:
                     end_x = screw_hole_min_x
 
-                self.logger.info('Right side in support: new end_x: %f', end_x)
+                self.logger.debug('Right side in support: new end_x: %f', end_x)
 
         return (start_x, end_x)
 
@@ -657,5 +659,9 @@ class Keyboard():
     def set_section(self, section_number):
         self.desired_section_number = section_number
 
-    def get_section_count(self):
+    def get_top_section_count(self):
         return len(self.switch_section_list)
+
+
+    def get_bottom_section_count(self):
+        return self.body.bottom_section_count
