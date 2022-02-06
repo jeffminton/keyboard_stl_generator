@@ -1,5 +1,5 @@
 {
-    "plate_only": true,
+    "plate_only": false,
     "plate_supports": true,
     
     "x_build_size" : 200,
@@ -25,7 +25,7 @@
     "hole_width": 10,
     "hole_height": 10,
 
-    "screw_count": 6,
+    "screw_count": 24,
     "screw_diameter": 4,
     "screw_edge_inset": 6.5,
 

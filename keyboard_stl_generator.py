@@ -179,9 +179,11 @@ def main():
     elif args.section == -3:
         rendered_object_dict[-1] = {}
         rendered_object_dict[-1]['top'] = union()
+        rendered_object_dict[-1]['bottom'] = union()
         for section in range(keyboard.get_section_count()):
             keyboard.set_section(section)
             rendered_object_dict[-1]['top'] += up(5 * section) ( keyboard.get_assembly(top = True) )
+            rendered_object_dict[-1]['bottom'] += up(5 * section) ( keyboard.get_assembly(bottom = True) )
 
 
     # Remove all sections but the one desired if section option used
@@ -192,7 +194,7 @@ def main():
 
     for section in rendered_object_dict.keys():
         section_postfix = ''
-        if args.section != -1:
+        if section > -1:
             section_postfix = '_section_%d' % (section)
 
         for part_name in rendered_object_dict[section].keys():
@@ -217,9 +219,8 @@ def main():
 
                     # os.system(openscad_command)
 
-    logger.info(subprocess_dict)
-
     if args.render:
+        logger.info(subprocess_dict)
         running = True
         while running == True:
             running = False

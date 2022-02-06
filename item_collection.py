@@ -83,8 +83,14 @@ class ItemCollection:
     def get_x_list(self, rx = 0.0, ry = 0.0):
         return self.collection[rx][ry].keys()
 
+    def get_sorted_x_list(self, rx = 0.0, ry = 0.0):
+        return sorted(self.collection[rx][ry].keys())
+
     def get_y_list_in_x(self, x, rx = 0.0, ry = 0.0):
         return self.collection[rx][ry][x].keys()
+
+    def get_sorted_y_list_in_x(self, x, rx = 0.0, ry = 0.0):
+        return sorted(self.collection[rx][ry][x].keys())
 
     def get_min_x(self, rx = 0.0, ry = 0.0):
         return min(self.collection[rx][ry].keys())

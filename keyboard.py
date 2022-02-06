@@ -85,7 +85,9 @@ class Keyboard():
         self.rotate_support_collection = union()
         self.rotate_support_cutout_collection = union()
 
-        self.section_list = [ItemCollection()]
+        self.switch_section_list = [ItemCollection()]
+        self.support_section_list = [ItemCollection()]
+        self.support_cutout_section_list = [ItemCollection()]
 
         self.body = None
 
@@ -209,9 +211,18 @@ class Keyboard():
         (min_x, max_x, max_y, min_y) = self.switch_collection.get_collection_bounds()
 
         # Add all switch and support collection objects to switch and support attributes
-        self.switch_supports += self.support_collection.get_moved_union()
-        self.switch_cutouts += self.switch_collection.get_moved_union()
-        self.switch_support_cutouts += self.support_cutout_collection.get_moved_union()
+        support_collection = self.support_collection
+        switch_collection = self.switch_collection
+        support_cutout_collection = self.support_cutout_collection
+
+        if self.desired_section_number > -1:
+            support_collection = self.support_section_list[self.desired_section_number]
+            switch_collection = self.switch_section_list[self.desired_section_number]
+            support_cutout_collection = self.support_section_list[self.desired_section_number]
+
+        self.switch_supports += support_collection.get_moved_union()
+        self.switch_cutouts += switch_collection.get_moved_union()
+        self.switch_support_cutouts += support_cutout_collection.get_moved_union()
 
         (rotated_min_x, rotated_max_x, rotated_max_y, rotated_min_y) = self.switch_rotation_collection.get_real_collection_bounds()
         self.logger.info('rotation_bounds: rotated_min_x: %f, rotated_max_x: %f, rotated_max_y: %f, rotated_min_y: %f', rotated_min_x, rotated_max_x, rotated_max_y, rotated_min_y)
@@ -271,15 +282,16 @@ class Keyboard():
         
         # Remove items marked as not part of desired section
         if self.desired_section_number > -1:
-            top_assembly -= self.get_section_remove_block(self.desired_section_number)
+            top_assembly -= self.get_top_section_remove_block(self.desired_section_number)
             # TODO
-            # bottom_assembly -= self.get_section_remove_block(self.desired_section_number)
+            bottom_section_inclusion = self.get_bottom_section_remove_block(self.desired_section_number)
+            # bottom_assembly -= self.get_bottom_section_remove_block(self.desired_section_number)
         
         # Move top_assembly so that the bottom left sits at 0, 0, 0
         top_assembly = up(self.body.case_height_base_removed + (self.plate_thickness / 2)) ( forward(Cell.u(abs(min_y)) + self.bottom_margin) ( right(self.left_margin) ( top_assembly ) ) )
         bottom_assembly = up(self.body.case_height_base_removed + (self.plate_thickness / 2)) ( forward(Cell.u(abs(min_y)) + self.bottom_margin) ( right(self.left_margin) ( bottom_assembly ) ) )
         body_block = up(self.body.case_height_base_removed + (self.plate_thickness / 2)) ( forward(Cell.u(abs(min_y)) + self.bottom_margin) ( right(self.left_margin) ( body_block ) ) )
-        
+        bottom_section_inclusion = up(self.body.case_height_base_removed + (self.plate_thickness / 2)) ( forward(Cell.u(abs(min_y)) + self.bottom_margin) ( right(self.left_margin) ( bottom_section_inclusion ) ) )
 
         # Create block that will remove material to make case bottom flat
         bottom_diff_plate = down(self.body.case_height_extra * 2) ( back(self.body.real_max_y / 2) ( left(self.body.real_max_x / 2) ( cube([self.body.real_max_x * 2, self.body.real_max_y * 2, self.body.case_height_extra * 2 ]) ) ) )
@@ -302,6 +314,7 @@ class Keyboard():
         # bottom_assembly += self.body.bottom_cover()
         # bottom_assembly += body_block
         bottom_assembly += self.body.bottom_cover() * body_block
+        bottom_assembly *= bottom_section_inclusion
 
         # # TEST ####
         # # Union together all rotated supports
@@ -369,13 +382,13 @@ class Keyboard():
         # build_area = left(self.left_margin) ( back(self.y_build_size - self.top_margin) ( down(10) ( cube([self.x_build_size, self.y_build_size, 10]) ) ) )
 
         switch_object_dict = self.switch_collection.get_collection_dict()
-        for x in sorted(switch_object_dict.keys()):
-            x_row = switch_object_dict[x]
-            for y in x_row.keys():
+        for x in self.switch_collection.get_sorted_x_list():
+            for y in self.switch_collection.get_sorted_y_list_in_x(x):
                 self.logger.debug('\tx: %d, y: %d', x, y)
-                self.logger.debug('x_row.keys(): %s', str(x_row.keys()))
                 # switch_cutouts += x_row[y].get_moved()
-                current_switch = x_row[y]
+                current_switch = self.switch_collection.get_item(x, y)
+                current_support = self.support_collection.get_item(x, y)
+                current_support_cutout = self.support_cutout_collection.get_item(x, y)
                 w = current_switch.w
                 h = current_switch.h
                 cell_value = current_switch.cell_value
@@ -389,34 +402,40 @@ class Keyboard():
 
                 if switch_x_max - current_x_start < self.x_build_size:
                     # self.logger.debug('current_x_section:', current_x_section)
-                    self.section_list[current_x_section].add_item(x, y, current_switch)
+                    self.switch_section_list[current_x_section].add_item(x, y, current_switch)
+                    self.support_section_list[current_x_section].add_item(x, y, current_support)
+                    self.support_cutout_section_list[current_x_section].add_item(x, y, current_support_cutout)
                 elif switch_x_max - current_x_start > self.x_build_size and next_x_section > current_x_section:
-                    self.section_list[next_x_section].add_item(x, y, current_switch)
+                    self.switch_section_list[next_x_section].add_item(x, y, current_switch)
+                    self.support_section_list[next_x_section].add_item(x, y, current_support)
+                    self.support_cutout_section_list[next_x_section].add_item(x, y, current_support_cutout)
                 else:
                     # self.logger.debug('switch_x_max:', switch_x_max, 'current_x_start:', current_x_start, 'switch_x_max - current_x_start:', switch_x_max - current_x_start, 'x_build_size:', x_build_size)
                     next_x_section = current_x_section + 1
-                    self.section_list.append(ItemCollection())
-                    self.section_list[next_x_section].add_item(x, y, current_switch)
+                    self.switch_section_list.append(ItemCollection())
+                    self.switch_section_list[next_x_section].add_item(x, y, current_switch)
+
+                    self.support_section_list.append(ItemCollection())
+                    self.support_section_list[next_x_section].add_item(x, y, current_support)
+
+                    self.support_cutout_section_list.append(ItemCollection())
+                    self.support_cutout_section_list[next_x_section].add_item(x, y, current_support_cutout)
 
                 
                 # self.logger.debug('\tswitch_x: (', switch_x_min, ',', switch_x_max, '), switch_y: (', switch_y_min, switch_y_max, ')')
             
             if next_x_section > current_x_section:
-                # current_x_start = self.section_list[next_x_section][0]['switch_x_min']
-                current_x_start = Cell.u(self.section_list[next_x_section].get_min_x())
+                # current_x_start = self.switch_section_list[next_x_section][0]['switch_x_min']
+                current_x_start = Cell.u(self.switch_section_list[next_x_section].get_min_x())
                 # self.logger.debug('current_x_start: %f', current_x_start)
                 current_x_section = next_x_section
 
-        for idx, section in enumerate(self.section_list):
+        for idx, section in enumerate(self.switch_section_list):
             self.logger.debug('Set Item neighbors for section %d', idx)
             section.set_item_neighbors()
 
-
-    def get_section_count(self):
-        return len(self.section_list)
-
-    def get_section_remove_block(self, section_number):
-        section = self.section_list[section_number]
+    def get_top_section_remove_block(self, section_number):
+        section = self.switch_section_list[section_number]
 
         self.logger.debug('Get Section %d', section_number)
 
@@ -483,39 +502,39 @@ class Keyboard():
 
                         # If switch has no global right neighbor
                         if item.has_neighbor('right', 'global') == False and item.end_x == max_x:
-                            self.logger.info('Switch %s, No global right neighbor. Not at board edge', str(item))
+                            self.logger.debug('Switch %s, No global right neighbor. Not at board edge', str(item))
                             neighbor = None
                             neighbor_offset = 0.0
                             if item.has_neighbor('top') == True:
                                 neighbor = item.get_neighbor('top')
-                                self.logger.info('Switch: %s, top neighbor: %s', str(item), str(neighbor))
+                                self.logger.debug('Switch: %s, top neighbor: %s', str(item), str(neighbor))
                                 offset = neighbor.get_neighbor_offset('right', 'global')
                                 if offset > neighbor_offset:
                                     neighbor_offset = offset
 
                             if item.has_neighbor('bottom') == True:
                                 neighbor = item.get_neighbor('bottom')
-                                self.logger.info('Switch: %s, bottom neighbor: %s', str(item), str(neighbor))
+                                self.logger.debug('Switch: %s, bottom neighbor: %s', str(item), str(neighbor))
                                 offset = neighbor.get_neighbor_offset('right', 'global')
                                 if offset > neighbor_offset:
                                     neighbor_offset = offset
 
-                            self.logger.info('Switch: %s, neighbor_offset: %f', str(item), neighbor_offset)
+                            self.logger.debug('Switch: %s, neighbor_offset: %f', str(item), neighbor_offset)
 
                             if neighbor_offset > 0.0:
                                 right_x_offset += Cell.u(neighbor_offset) / 2
-                                self.logger.info('1: switch %s, right_x_offset %f', str(item), right_x_offset)
+                                self.logger.debug('1: switch %s, right_x_offset %f', str(item), right_x_offset)
 
                         
                         # if include_right_border == False:
                         if item.has_neighbor('right') == False:
-                            self.logger.info('switch %s, has right neighbor %s', str(item), str(item.has_neighbor('right')))
+                            self.logger.debug('switch %s, has right neighbor %s', str(item), str(item.has_neighbor('right')))
                             right_x_offset += Cell.u(item.x + item.w)
 
                             if item.has_neighbor('right', 'global') == True:
                                 neighbor_offset = item.get_neighbor_offset('right', 'global')
                                 right_x_offset += Cell.u(min([neighbor_offset / 2, max_x]))
-                                self.logger.info('\t\tglobal right neighbor offset: %f, right_x_offset: %f', neighbor_offset, right_x_offset - Cell.u(item.x + item.w))
+                                self.logger.debug('\t\tglobal right neighbor offset: %f, right_x_offset: %f', neighbor_offset, right_x_offset - Cell.u(item.x + item.w))
                             else:
                                 right_x_offset += Cell.u(max_x - item.end_x)
                             if include_right_border == False:
@@ -523,21 +542,21 @@ class Keyboard():
                         
                         # if include_left_border == False:
                         if item.has_neighbor('left') == False:
-                            self.logger.info('2: switch %s, left_x_offset %f', str(item), left_x_offset)
-                            self.logger.info('switch %s, has left neighbor %s', str(item), str(item.has_neighbor('left')))
-                            self.logger.info('remove_block_length: %f, item.x: %f, Cell.u(item.x): %f, -(remove_block_length) + Cell.u(item.x): %f', remove_block_length, item.x, Cell.u(item.x), -(remove_block_length) + Cell.u(item.x))
+                            self.logger.debug('2: switch %s, left_x_offset %f', str(item), left_x_offset)
+                            self.logger.debug('switch %s, has left neighbor %s', str(item), str(item.has_neighbor('left')))
+                            self.logger.debug('remove_block_length: %f, item.x: %f, Cell.u(item.x): %f, -(remove_block_length) + Cell.u(item.x): %f', remove_block_length, item.x, Cell.u(item.x), -(remove_block_length) + Cell.u(item.x))
                             left_x_offset += -(remove_block_length) + Cell.u(item.x)
-                            self.logger.info('3: switch %s, left_x_offset %f', str(item), left_x_offset)
+                            self.logger.debug('3: switch %s, left_x_offset %f', str(item), left_x_offset)
 
                             if item.has_neighbor('left', 'global') == True:
                                 neighbor_offset = item.get_neighbor_offset('left', 'global')
-                                self.logger.info('\t\tglobal left neighbor offset: %f, left_x_offset: %f', neighbor_offset, left_x_offset)
+                                self.logger.debug('\t\tglobal left neighbor offset: %f, left_x_offset: %f', neighbor_offset, left_x_offset)
                                 if neighbor_offset > 0.0:
                                     left_x_offset -= Cell.u(neighbor_offset) / 2
-                                    # self.logger.info('\t\tglobal left neighbor offset: %f, left_x_offset: %f', neighbor_offset, left_x_offset)
+                                    # self.logger.debug('\t\tglobal left neighbor offset: %f, left_x_offset: %f', neighbor_offset, left_x_offset)
 
                             if include_left_border == False:
-                                self.logger.info('4: switch %s, left_x_offset %f', str(item), left_x_offset)
+                                self.logger.debug('4: switch %s, left_x_offset %f', str(item), left_x_offset)
                                 remove_block += down(remove_block_z_offset) ( right(left_x_offset) ( forward(y_offset) ( cube([remove_block_length, bar_height, remove_block_height]) ) ) )
                                 # remove_block += down(self.support_bar_height * 3) ( right(left_x_offset) ( forward(Cell.u(item.y - item.h) ) ( cube([self.support_bar_width / 2, bar_height, self.support_bar_height * 10]) ) ) )
                         
@@ -555,5 +574,88 @@ class Keyboard():
 
         return remove_block
 
+    
+    def get_bottom_section_remove_block(self, section_number):
+        section = self.switch_section_list[section_number]
+
+        self.logger.debug('Get Section %d', section_number)
+
+        self.logger.info('real_case_width: %f', self.body.real_case_width)
+        self.logger.info('real_case_height: %f', self.body.real_case_height)
+
+        self.logger.info('self.body.bottom_section_count: %f', self.body.bottom_section_count)
+
+        section_size = self.body.real_case_width / self.body.bottom_section_count
+
+        self.logger.info('section_size: %f', section_size)
+
+        start_x = section_size * section_number
+        end_x = start_x + section_size
+
+        (start_x, end_x) = self.get_screw_support_interference_offset(start_x, end_x)
+
+        x_offset = start_x - self.body.right_margin
+        y_offset = self.body.real_case_height / 2 + self.body.real_case_height
+        z_offset = self.body.case_height_extra_fill / 2
+
+
+        width = end_x - start_x
+        height = self.body.real_case_height * 2
+        thickness = self.body.case_height_extra_fill * 2
+
+        self.logger.info('section: %d, x_offset: %f, width: %f, y_offset: %f', section_number, x_offset, width, y_offset)
+
+        return right(x_offset) ( back(y_offset) ( down(z_offset) ( cube([width, height, thickness]) ) ) )
+
+
+
+    def get_screw_support_interference_offset(self, start_x, end_x):
+
+        for coord_string in self.body.screw_hole_info.keys():
+            screw_hole_info = self.body.screw_hole_info[coord_string]
+
+            screw_x = screw_hole_info['x']
+            screw_y = screw_hole_info['y']
+
+            # self.logger.info('coord_string: %s, screw_x: %f, screw_y: %f', coord_string, screw_x, screw_y)
+
+            screw_hole_min_x = screw_x - screw_hole_info['support_directions']['left']
+            screw_hole_max_x = screw_x + screw_hole_info['support_directions']['right']
+
+            # self.logger.info('screw_hole_min_x: %f, screw_hole_max_x: %f', screw_hole_min_x, screw_hole_max_x)
+
+            # Left side of section cutout is within a screw hole support
+            if start_x > screw_hole_min_x and start_x < screw_hole_max_x:
+                self.logger.info('Left side in support: old start_x: %f', start_x)
+                # Left sie of section cutout is in the middle of a screw hole
+                # move the start to the right
+                if start_x >= screw_x:
+                    start_x = screw_hole_max_x
+                if start_x < screw_x:
+                    start_x = screw_hole_min_x
+
+                self.logger.info('Left side in support: new start_x: %f', start_x)
+
+            # Right side of section cutout is within a screw hole support
+            if end_x > screw_hole_min_x and end_x < screw_hole_max_x:
+                self.logger.info('Right side in support: old end_x: %f', end_x)
+                # Right side of section cutout is in the middle of a screw hole
+                # move the end to the right
+                if end_x >= screw_x:
+                    end_x = screw_hole_max_x
+                if end_x < screw_x:
+                    end_x = screw_hole_min_x
+
+                self.logger.info('Right side in support: new end_x: %f', end_x)
+
+        return (start_x, end_x)
+
+
+
+
+    
     def set_section(self, section_number):
         self.desired_section_number = section_number
+
+    def get_section_count(self):
+        return len(self.switch_section_list)
