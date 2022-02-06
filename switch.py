@@ -223,6 +223,16 @@ class Switch(Cell):
 
     # def check_all_neighbors_set(self):
 
+    def get_neighbor(self, neighbor_name, neighbor_group = 'local'):
+        
+        neighbor = None
+
+        if neighbor_group == 'local':
+            neighbor = self.local_neighbors[neighbor_name]['neighbor']
+        elif neighbor_group == 'global':
+            neighbor =  self.global_neighbors[neighbor_name]['neighbor']
+
+        return neighbor
 
     def set_neighbor(self, neighbor = None, neighbor_name = '', offset = 0.0, has_neighbor = True, neighbor_group = 'local'):
         

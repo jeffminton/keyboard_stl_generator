@@ -247,12 +247,15 @@ class Keyboard():
         # Add case to top_assembly
         top_assembly += self.body.case()
 
-        # Remove switch suport cutouts
-        top_assembly -= self.switch_support_cutouts
+        if self.get_param('simple_test') == False:
+            # Remove switch suport cutouts
+            # TODO
+            top_assembly -= self.switch_support_cutouts
 
-        # Add switch supports and remove switch cutouts
-        top_assembly += self.switch_supports
-        top_assembly -= self.switch_cutouts
+            # Add switch supports and remove switch cutouts
+            # TODO
+            top_assembly += self.switch_supports
+            top_assembly -= self.switch_cutouts
         
         # Generate screw hole related objects
         screw_hole_collection, screw_hole_body_collection = self.body.screw_hole_objects()
@@ -456,6 +459,8 @@ class Keyboard():
                         # base separator bar height
                         bar_height = Cell.u(item.h)
                         y_offset = Cell.u(item.y - item.h)
+                        right_x_offset = 0.0
+                        left_x_offset = 0.0
 
                         # if switch has a local top neighbor include any offset between this and that key in separator bar
                         if item.has_neighbor('top') == True:
@@ -474,32 +479,67 @@ class Keyboard():
                             self.logger.debug('%s, Global Bottom Bar False', str(item))
                             bar_height += Cell.u( abs(min_y) - (abs(item.y) + item.h) ) + self.bottom_margin
                             self.logger.debug('\t bar_height: %f', bar_height)
-                            y_offset -= self.bottom_margin 
+                            y_offset -= self.bottom_margin
+
+                        # If switch has no global right neighbor
+                        if item.has_neighbor('right', 'global') == False and item.end_x == max_x:
+                            self.logger.info('Switch %s, No global right neighbor. Not at board edge', str(item))
+                            neighbor = None
+                            neighbor_offset = 0.0
+                            if item.has_neighbor('top') == True:
+                                neighbor = item.get_neighbor('top')
+                                self.logger.info('Switch: %s, top neighbor: %s', str(item), str(neighbor))
+                                offset = neighbor.get_neighbor_offset('right', 'global')
+                                if offset > neighbor_offset:
+                                    neighbor_offset = offset
+
+                            if item.has_neighbor('bottom') == True:
+                                neighbor = item.get_neighbor('bottom')
+                                self.logger.info('Switch: %s, bottom neighbor: %s', str(item), str(neighbor))
+                                offset = neighbor.get_neighbor_offset('right', 'global')
+                                if offset > neighbor_offset:
+                                    neighbor_offset = offset
+
+                            self.logger.info('Switch: %s, neighbor_offset: %f', str(item), neighbor_offset)
+
+                            if neighbor_offset > 0.0:
+                                right_x_offset += Cell.u(neighbor_offset) / 2
+                                self.logger.info('1: switch %s, right_x_offset %f', str(item), right_x_offset)
+
                         
                         # if include_right_border == False:
                         if item.has_neighbor('right') == False:
                             self.logger.info('switch %s, has right neighbor %s', str(item), str(item.has_neighbor('right')))
-                            x_offset = Cell.u(item.x + item.w)
+                            right_x_offset += Cell.u(item.x + item.w)
 
                             if item.has_neighbor('right', 'global') == True:
                                 neighbor_offset = item.get_neighbor_offset('right', 'global')
-                                x_offset += Cell.u(min([neighbor_offset / 2, max_x]))
-                                self.logger.info('\t\tglobal right neighbor offset: %f, x_offset: %f', neighbor_offset, x_offset - Cell.u(item.x + item.w))
-                            remove_block += down(remove_block_z_offset) ( right(x_offset) ( forward(y_offset) ( cube([remove_block_length, bar_height, remove_block_height]) ) ) )
+                                right_x_offset += Cell.u(min([neighbor_offset / 2, max_x]))
+                                self.logger.info('\t\tglobal right neighbor offset: %f, right_x_offset: %f', neighbor_offset, right_x_offset - Cell.u(item.x + item.w))
+                            else:
+                                right_x_offset += Cell.u(max_x - item.end_x)
+                            if include_right_border == False:
+                                remove_block += down(remove_block_z_offset) ( right(right_x_offset) ( forward(y_offset) ( cube([remove_block_length, bar_height, remove_block_height]) ) ) )
                         
                         # if include_left_border == False:
                         if item.has_neighbor('left') == False:
+                            self.logger.info('2: switch %s, left_x_offset %f', str(item), left_x_offset)
                             self.logger.info('switch %s, has left neighbor %s', str(item), str(item.has_neighbor('left')))
-                            x_offset = -(remove_block_length) + Cell.u(item.x)
+                            self.logger.info('remove_block_length: %f, item.x: %f, Cell.u(item.x): %f, -(remove_block_length) + Cell.u(item.x): %f', remove_block_length, item.x, Cell.u(item.x), -(remove_block_length) + Cell.u(item.x))
+                            left_x_offset += -(remove_block_length) + Cell.u(item.x)
+                            self.logger.info('3: switch %s, left_x_offset %f', str(item), left_x_offset)
 
                             if item.has_neighbor('left', 'global') == True:
                                 neighbor_offset = item.get_neighbor_offset('left', 'global')
+                                self.logger.info('\t\tglobal left neighbor offset: %f, left_x_offset: %f', neighbor_offset, left_x_offset)
                                 if neighbor_offset > 0.0:
-                                    x_offset -= Cell.u(neighbor_offset) / 2
-                                    self.logger.info('\t\tglobal left neighbor offset: %f, x_offset: %f', neighbor_offset, x_offset)
+                                    left_x_offset -= Cell.u(neighbor_offset) / 2
+                                    # self.logger.info('\t\tglobal left neighbor offset: %f, left_x_offset: %f', neighbor_offset, left_x_offset)
 
-                                remove_block += down(remove_block_z_offset) ( right(x_offset) ( forward(y_offset) ( cube([remove_block_length, bar_height, remove_block_height]) ) ) )
-                                # remove_block += down(self.support_bar_height * 3) ( right(x_offset) ( forward(Cell.u(item.y - item.h) ) ( cube([self.support_bar_width / 2, bar_height, self.support_bar_height * 10]) ) ) )
+                            if include_left_border == False:
+                                self.logger.info('4: switch %s, left_x_offset %f', str(item), left_x_offset)
+                                remove_block += down(remove_block_z_offset) ( right(left_x_offset) ( forward(y_offset) ( cube([remove_block_length, bar_height, remove_block_height]) ) ) )
+                                # remove_block += down(self.support_bar_height * 3) ( right(left_x_offset) ( forward(Cell.u(item.y - item.h) ) ( cube([self.support_bar_width / 2, bar_height, self.support_bar_height * 10]) ) ) )
                         
                         # if include_top_border == False:
                         #     self.logger.debug('switch %s, has top neighbor %s', str(item), str(item.has_neighbor('top')))

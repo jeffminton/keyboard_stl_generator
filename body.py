@@ -443,7 +443,7 @@ class Body():
             x = coord[0]
             y = coord[1]
 
-            self.logger.info('coord: %s, self.x_screw_width: %f, self.y_screw_width: %f', str(coord), self.x_screw_width, self.y_screw_width)
+            # self.logger.info('coord: %s, self.x_screw_width: %f, self.y_screw_width: %f', str(coord), self.x_screw_width, self.y_screw_width)
             # Skip the center top screw hole if it is in the top center and the case has a cable hole
             if cable_hole == True and y == self.y_screw_width and x == self.x_screw_width / 2:
                 # self.logger.info('coord: %s', str(coord))
