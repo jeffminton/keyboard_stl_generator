@@ -59,8 +59,20 @@ class Keyboard():
 
             'support_bar_height' : 3.0,
             'support_bar_width' : 1.0,
-            'tilt': 0.0
+            'tilt': 0.0,
+
+            'simple_test': False
         }
+
+        self.kerf = 0.0
+
+        self.body = None
+
+        self.desired_section_number = -1
+
+        self.cable_hole_up_offset = 1
+
+        self.cable_hole = False
 
         self.build_attr_from_dict(self.default_parameter_dict)
         
@@ -89,20 +101,14 @@ class Keyboard():
         self.support_section_list = [ItemCollection()]
         self.support_cutout_section_list = [ItemCollection()]
 
-        self.body = None
-
-        self.desired_section_number = -1
-
-        self.cable_hole_up_offset = 1
-
 
 
 
     def build_attr_from_dict(self, parameter_dict):
         for param in parameter_dict.keys():
-             value = parameter_dict[param]
-
-             setattr(self, param, value)
+            value = parameter_dict[param]
+            
+            setattr(self, param, value)
     
     
     def set_parameter_dict(self, parameter_dict):
@@ -112,7 +118,7 @@ class Keyboard():
     
     def get_param(self, paramaeter_name):
 
-        if paramaeter_name in self.parameter_dict.keys():
+        if self.parameter_dict is not None and paramaeter_name in self.parameter_dict.keys():
             return self.parameter_dict[paramaeter_name]
         elif paramaeter_name in self.default_parameter_dict.keys():
             return self.default_parameter_dict[paramaeter_name]
@@ -181,6 +187,7 @@ class Keyboard():
                         elif rotation != 0.0:
                             self.switch_rotation_collection.add_item(rotation, x_offset, y_offset, Switch(x_offset, y_offset, w, h, kerf = self.kerf, rotation = rotation, cell_value = col_escaped), rx, ry)
                             self.support_rotation_collection.add_item(rotation, x_offset, y_offset, Support(x_offset, y_offset,w, h, self.plate_thickness, self.support_bar_height, self.support_bar_width, rotation = rotation), rx, ry)
+                            self.support_cutout_rotation_collection.add_item(rotation, x_offset, y_offset, SupportCutout(x_offset, y_offset,w, h, self.plate_thickness, self.support_bar_height, self.support_bar_width, rotation = rotation), rx, ry)
 
                         # Create normal switch support outline
                         # if rotation == 0.0:
@@ -200,7 +207,6 @@ class Keyboard():
 
         # create sections of the keyboard for usin in splitting for printing
         self.split_keyboard()
-        self.logger.info('Sectons In Top: %d', self.get_top_section_count())
 
     def get_assembly(self, top = False, bottom = False, all = True):
         # Init top_assembly and bottom_assembly objects
@@ -218,7 +224,7 @@ class Keyboard():
         if self.desired_section_number > -1:
             support_collection = self.support_section_list[self.desired_section_number]
             switch_collection = self.switch_section_list[self.desired_section_number]
-            support_cutout_collection = self.support_section_list[self.desired_section_number]
+            support_cutout_collection = self.support_cutout_section_list[self.desired_section_number]
 
         self.switch_supports += support_collection.get_moved_union()
         self.switch_cutouts += switch_collection.get_moved_union()
@@ -239,10 +245,12 @@ class Keyboard():
         # Union together all rotated switch cutouts 
         for rotation in self.switch_rotation_collection.get_rotation_list():
             self.switch_cutouts += self.switch_rotation_collection.get_rotated_moved_union(rotation)
+            self.switch_supports += self.support_rotation_collection.get_rotated_moved_union(rotation)
+            self.switch_support_cutouts += self.support_cutout_rotation_collection.get_rotated_moved_union(rotation)
 
         # Union together all rotated supports
-        for rotation in self.support_rotation_collection.get_rotation_list():
-            self.switch_supports += self.support_rotation_collection.get_rotated_moved_union(rotation)
+        # for rotation in self.support_rotation_collection.get_rotation_list():
+        #     self.switch_supports += self.support_rotation_collection.get_rotated_moved_union(rotation)
 
         # Add rotated 
         # self.switch_supports += self.rotate_support_collection
@@ -443,6 +451,8 @@ class Keyboard():
 
         (min_x, max_x, max_y, min_y) = section.get_collection_bounds()
 
+        (case_min_x, case_max_x, case_max_y, case_min_y) = section.get_collection_bounds()
+
         self.logger.debug('Section Bounds: min_x: %f, max_x: %f, max_y: %f, min_y: %f', min_x, max_x, max_y, min_y)
 
         include_right_border = False
@@ -475,11 +485,12 @@ class Keyboard():
             for ry in section.get_ry_list_in_rx(rx):
                 for x in section.get_x_list_in_rx_ry(rx, ry):
                     for y in section.get_y_list_in_rx_ry_x(x, rx, ry):
+                        item: Switch
                         item = section.get_item(x, y)
 
                         # base separator bar height
-                        bar_height = Cell.u(item.h)
-                        y_offset = Cell.u(item.y - item.h)
+                        bar_height = Cell.u(item.h) + (self.kerf * 2)
+                        y_offset = Cell.u(item.y - item.h) - self.kerf
                         right_x_offset = 0.0
                         left_x_offset = 0.0
 
@@ -498,10 +509,15 @@ class Keyboard():
                         # If switch has no global bottom neighbor include the board edge in this separator bar
                         if item.has_neighbor('bottom', 'global') == False:
                             self.logger.debug('%s, Global Bottom Bar False', str(item))
-                            bar_height += Cell.u( abs(min_y) - (abs(item.y) + item.h) ) + self.bottom_margin
+                            bar_height += Cell.u( abs(self.body.min_y) - (abs(item.y) + item.h) ) + self.bottom_margin
                             self.logger.debug('\t bar_height: %f', bar_height)
-                            y_offset -= self.bottom_margin
+                            y_offset -= (self.bottom_margin + Cell.u( abs(self.body.min_y) - (abs(item.y) + item.h) ) )
 
+                            if item.has_neighbor('right') == True:
+                                perp_offset = item.get_neighbor_perp_offset('right')
+                                if perp_offset > 0.0:
+                                    self.logger.info('Switch: %s, perp_offset: %f', str(item), perp_offset)
+                        
                         # If switch has no global right neighbor
                         if item.has_neighbor('right', 'global') == False and item.end_x == max_x:
                             self.logger.debug('Switch %s, No global right neighbor. Not at board edge', str(item))
@@ -584,8 +600,6 @@ class Keyboard():
 
         self.logger.debug('real_case_width: %f', self.body.real_case_width)
         self.logger.debug('real_case_height: %f', self.body.real_case_height)
-
-        self.logger.info('self.body.bottom_section_count: %f', self.body.bottom_section_count)
 
         section_size = self.body.real_case_width / self.body.bottom_section_count
 

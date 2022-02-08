@@ -234,12 +234,13 @@ class Switch(Cell):
 
         return neighbor
 
-    def set_neighbor(self, neighbor = None, neighbor_name = '', offset = 0.0, has_neighbor = True, neighbor_group = 'local'):
+    def set_neighbor(self, neighbor = None, neighbor_name = '', offset = 0.0, has_neighbor = True, neighbor_group = 'local', perp_offset = 0.0):
         
         temp_dict = {
             'has_neighbor': has_neighbor,
             'neighbor': neighbor,
-            'offset': offset
+            'offset': offset,
+            'perp_offset': perp_offset
         }
         
         if neighbor_group == 'local':
@@ -247,17 +248,17 @@ class Switch(Cell):
         elif neighbor_group == 'global':
             self.global_neighbors[neighbor_name] = temp_dict
         
-    def set_right_neighbor(self, neighbor = None, offset = 0.0, has_neighbor = True, neighbor_group = 'local'):
-        self.set_neighbor(neighbor, 'right', offset, has_neighbor, neighbor_group)
+    def set_right_neighbor(self, neighbor = None, offset = 0.0, has_neighbor = True, neighbor_group = 'local', perp_offset = 0.0):
+        self.set_neighbor(neighbor, 'right', offset, has_neighbor, neighbor_group, perp_offset)
 
-    def set_left_neighbor(self, neighbor = None, offset = 0.0, has_neighbor = True, neighbor_group = 'local'):
-        self.set_neighbor(neighbor, 'left', offset, has_neighbor, neighbor_group)
+    def set_left_neighbor(self, neighbor = None, offset = 0.0, has_neighbor = True, neighbor_group = 'local', perp_offset = 0.0):
+        self.set_neighbor(neighbor, 'left', offset, has_neighbor, neighbor_group, perp_offset)
 
-    def set_top_neighbor(self, neighbor = None, offset = 0.0, has_neighbor = True, neighbor_group = 'local'):
-        self.set_neighbor(neighbor, 'top', offset, has_neighbor, neighbor_group)
+    def set_top_neighbor(self, neighbor = None, offset = 0.0, has_neighbor = True, neighbor_group = 'local', perp_offset = 0.0):
+        self.set_neighbor(neighbor, 'top', offset, has_neighbor, neighbor_group, perp_offset)
 
-    def set_bottom_neighbor(self, neighbor = None, offset = 0.0, has_neighbor = True, neighbor_group = 'local'):
-        self.set_neighbor(neighbor, 'bottom', offset, has_neighbor, neighbor_group)
+    def set_bottom_neighbor(self, neighbor = None, offset = 0.0, has_neighbor = True, neighbor_group = 'local', perp_offset = 0.0):
+        self.set_neighbor(neighbor, 'bottom', offset, has_neighbor, neighbor_group, perp_offset)
 
     def has_neighbor(self, neighbor_name = '', neighbor_group = 'local'):
         if neighbor_group == 'local':
@@ -270,3 +271,9 @@ class Switch(Cell):
             return self.local_neighbors[neighbor_name]['offset']
         elif neighbor_group == 'global':
             return self.global_neighbors[neighbor_name]['offset']
+
+    def get_neighbor_perp_offset(self, neighbor_name = '', neighbor_group = 'local'):
+        if neighbor_group == 'local':
+            return self.local_neighbors[neighbor_name]['perp_offset']
+        elif neighbor_group == 'global':
+            return self.global_neighbors[neighbor_name]['perp_offset']

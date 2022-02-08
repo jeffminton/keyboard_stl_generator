@@ -50,13 +50,14 @@ def main():
 
     parser = argparse.ArgumentParser(description='Build custom keyboard SCAD file using keyboard layout editor format')
     parser.add_argument('-i', '--input-file', metavar = 'layout_json_file_name.json', help = 'A path to a keyboard layout editor json file', required = True, action=CheckExt({'json'}))
-    parser.add_argument('-o', '--output-folder', metavar = 'scad', help = 'A path to a folder to store the generated open scad file')
+    # parser.add_argument('-o', '--output-folder', metavar = 'scad', help = 'A path to a folder to store the generated open scad file')
     parser.add_argument('-p', '--parameter-file', metavar = 'parameters.json', help = 'A JSON file containing paramters for the object buing made', default = None, action=CheckExt({'json'}))
-    parser.add_argument('-r', '--render', help = 'Render an STL from the generated scad file', default = False, action = 'store_true')
-    parser.add_argument('-f', '--fragments', metavar = 'num_fragments', help = 'The number of fragments to be used when creating curves', type = int, default = 8)
     parser.add_argument('-s', '--section', metavar = 'section_num', help = 'The number of the section that should be built', type = int, default = -1)
-    parser.add_argument('-x', '--x-fill', help = 'Pad empty spaces to the left of keys', default = False, action = 'store_true')
-    parser.add_argument('-b', '--blank-fill', help = 'Pad empty spaces to the left of keys', default = False, action = 'store_true')
+    parser.add_argument('-a', '--all-sections', help = 'Output all the parts for all possible sections in separate files', default = False, action = 'store_true')
+    parser.add_argument('-t', '--test-sections', help = 'Create test file with all section seprated in z direction to check for fit', default = False, action = 'store_true')
+    parser.add_argument('-f', '--fragments', metavar = 'num_fragments', help = 'The number of fragments to be used when creating curves', type = int, default = 8)
+    parser.add_argument('-r', '--render', help = 'Render an STL from the generated scad file', default = False, action = 'store_true')
+
     
     rendered_object_dict = {}
 
@@ -89,9 +90,9 @@ def main():
     if stl_folder_path.is_dir() == False:
         stl_folder_path.mkdir()
 
-    logger.info('layout_name: %s', str(layout_name))
-    logger.info('base_path: %s', str(base_path))
-    logger.info('file_name_only: %s', str(file_name_only))
+    logger.debug('layout_name: %s', str(layout_name))
+    logger.debug('base_path: %s', str(base_path))
+    logger.debug('file_name_only: %s', str(file_name_only))
     
 
     scad_postfix = '.scad'
@@ -107,11 +108,11 @@ def main():
     scad_file_name = scad_folder_path / (layout_name + section_postfix + scad_postfix)
     stl_file_name = stl_folder_path / (layout_name + section_postfix + stl_postfix)
 
-    logger.info('Read layout from file %s write generated scad to %s. ', input_file_path, scad_file_name)
+    logger.info('Read layout from file %s', input_file_path)
 
     # Set fragments per circle
     FRAGMENTS = args.fragments
-    logger.info('\tFragments: %d', FRAGMENTS)
+    logger.debug('\tFragments: %d', FRAGMENTS)
 
     json_key_pattern = '([{,])([xywha1]+):'
     json_key_replace = '\\1"\\2":'
@@ -125,7 +126,7 @@ def main():
     # Load keyboard layout dictionary
     try:
         keyboard_layout_dict = json.loads(keyboard_layout)
-        logger.warning('Valid Json Parsed')
+        logger.debug('Valid Json Parsed')
     except:
         keyboard_layout = '[%s]' % (keyboard_layout)
         json_replace_match = re.search(json_key_pattern, keyboard_layout)
@@ -166,7 +167,26 @@ def main():
     # Process the keyboar layout object
     keyboard.process_keyboard_layout(keyboard_layout_dict)
 
-    if args.section > -1:
+    logger.info('kerf: %f', keyboard.kerf)
+
+    if args.all_sections == True:
+        for section in range(keyboard.get_top_section_count()):
+            keyboard.set_section(section)
+            rendered_object_dict[section] = {}
+            rendered_object_dict[section]['top'] = keyboard.get_assembly(top = True)
+            if section < keyboard.get_bottom_section_count():
+                rendered_object_dict[section]['bottom'] = keyboard.get_assembly(bottom = True)
+            rendered_object_dict[section]['all'] = keyboard.get_assembly(all = True)
+    elif args.test_sections == True:
+        rendered_object_dict[-1] = {}
+        rendered_object_dict[-1]['top'] = union()
+        rendered_object_dict[-1]['bottom'] = union()
+        for section in range(keyboard.get_top_section_count()):
+            keyboard.set_section(section)
+            rendered_object_dict[-1]['top'] += up(5 * section) ( keyboard.get_assembly(top = True) )
+            if section < keyboard.get_bottom_section_count():
+                rendered_object_dict[-1]['bottom'] += up(5 * section) ( keyboard.get_assembly(bottom = True) )
+    elif args.section > -1:
         # Get the full keyboard assembly
         rendered_object_dict[args.section] = {}
         rendered_object_dict[args.section]['top'] = keyboard.get_assembly(top = True)
@@ -177,24 +197,10 @@ def main():
         rendered_object_dict[args.section]['top'] = keyboard.get_assembly(top = True)
         rendered_object_dict[args.section]['bottom'] = keyboard.get_assembly(bottom = True)
         rendered_object_dict[args.section]['all'] = keyboard.get_assembly(all = True)
-    elif args.section == -2:
-        for section in range(keyboard.get_top_section_count()):
-            keyboard.set_section(section)
-            rendered_object_dict[section] = {}
-            rendered_object_dict[section]['top'] = keyboard.get_assembly(top = True)
-            if section < keyboard.get_bottom_section_count():
-                rendered_object_dict[section]['bottom'] = keyboard.get_assembly(bottom = True)
-            rendered_object_dict[section]['all'] = keyboard.get_assembly(all = True)
-    elif args.section == -3:
-        rendered_object_dict[-1] = {}
-        rendered_object_dict[-1]['top'] = union()
-        rendered_object_dict[-1]['bottom'] = union()
-        for section in range(keyboard.get_top_section_count()):
-            keyboard.set_section(section)
-            rendered_object_dict[-1]['top'] += up(5 * section) ( keyboard.get_assembly(top = True) )
-            if section < keyboard.get_bottom_section_count():
-                rendered_object_dict[-1]['bottom'] += up(5 * section) ( keyboard.get_assembly(bottom = True) )
+        
 
+    logger.info('Sections In Top: %d', keyboard.get_top_section_count())
+    logger.info('Sections In Bottom: %d', keyboard.get_bottom_section_count())
 
     # Remove all sections but the one desired if section option used
     # if args.section > -1:
@@ -214,23 +220,19 @@ def main():
             if rendered_object_dict[section][part_name] is not None:
                 logger.info('Generate scad file with name %s', scad_file_name)
                 # Generate SCAD file from assembly
-                # scad_render_to_file(rendered_object_dict[section][part_name], scad_file_name, file_header=f'$fn = {FRAGMENTS};')
+                scad_render_to_file(rendered_object_dict[section][part_name], scad_file_name, file_header=f'$fn = {FRAGMENTS};')
                 
                 # Render STL if option is chosen
                 if args.render:
-                    logger.info('Render STL from SCAD')
+                    logger.debug('Render STL from SCAD')
                     logger.info('Generate stl file with name %s from %s', stl_file_name, scad_file_name)
 
 
                     openscad_command_list = ['openscad', '-o', '%s' % (stl_file_name), '%s' % (scad_file_name)]
-                    # openscad_command = 'openscad -o %s  %s' % (stl_file_name, scad_file_name)
-
-                    # subprocess_dict[stl_file_name] = subprocess.Popen(openscad_command_list)
-
-                    # os.system(openscad_command)
+                    subprocess_dict[stl_file_name] = subprocess.Popen(openscad_command_list)
 
     if args.render:
-        logger.info(subprocess_dict)
+        logger.debug(subprocess_dict)
         running = True
         while running == True:
             running = False

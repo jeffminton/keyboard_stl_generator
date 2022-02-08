@@ -2,10 +2,10 @@
     "plate_only": false,
     "plate_supports": true,
     
-    "x_build_size" : 200,
-    "y_build_size" : 200,
+    "x_build_size" : 80,
+    "y_build_size" : 80,
 
-    "kerf" : 0.01,
+    "kerf" : 0.1,
 
     "top_margin" : 12,
     "bottom_margin" : 12,

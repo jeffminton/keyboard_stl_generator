@@ -29,6 +29,8 @@ class Body():
 
             self.logger.addHandler(ch)
 
+        self.x_build_size = 200.0
+        self.y_build_size = 200.0
 
         self.top_margin = 8.0
         self.bottom_margin = 8.0
@@ -44,11 +46,13 @@ class Body():
         self.support_bar_width = 1.0
 
         self.create_screw_holes = False
-        self.screw_count = 0
-        self.screw_diameter = 0
+        self.screw_count = 4
+        self.screw_diameter = 4
         self.screw_edge_inset = 8
         self.screw_hole_body_wall_width = 2
         self.screw_hole_body_support_x_factor = 4
+
+        self.bottom_cover_thickness = 2.0
 
         self.case_height_extra = 30
 
@@ -116,7 +120,7 @@ class Body():
             setattr(self, param, value)
 
             if param == 'screw_count':
-                self.logger.info('%s: %s, self.screw_count: %s', str(param), str(value), str(self.screw_count))
+                self.logger.debug('%s: %s, self.screw_count: %s', str(param), str(value), str(self.screw_count))
     
     
     def set_parameter_dict(self, parameter_dict):
@@ -338,13 +342,13 @@ class Body():
 
         invalid_screw_count = False
         try:
-            if self.screw_count > 4:
+            if self.screw_count >= 4:
                 if self.screw_count % 2 != 0:
                     invalid_screw_count = True
                     raise ValueError('Screw count must be even')
             else:
                 invalid_screw_count = True
-                raise ValueError('Screw count must be greater than 4')
+                raise ValueError('Screw count must be at least 4')
         except:
             if invalid_screw_count == True:
                 raise
@@ -442,13 +446,13 @@ class Body():
 
         invalid_screw_count = False
         try:
-            if self.screw_count > 4:
+            if self.screw_count >= 4:
                 if self.screw_count % 2 != 0:
                     invalid_screw_count = True
                     raise ValueError('Screw count must be even')
             else:
                 invalid_screw_count = True
-                raise ValueError('Screw count must be greater than 4')
+                raise ValueError('Screw count must be at least 4')
         except:
             if invalid_screw_count == True:
                 raise

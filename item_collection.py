@@ -206,17 +206,21 @@ class ItemCollection:
                                 if direction == 'right':
                                     closest_neighbor = min(neighbor_list_dict[direction], key=lambda item: item.x)
                                     offset = closest_neighbor.x_min - x_max
+                                    perp_offset = closest_neighbor.y - current_switch.y
                                 elif direction == 'left':
                                     closest_neighbor = max(neighbor_list_dict[direction], key=lambda item: item.x)
                                     offset = x_min - closest_neighbor.x_max
+                                    perp_offset = closest_neighbor.y - current_switch.y
                                 elif direction == 'top':
                                     closest_neighbor = min(neighbor_list_dict[direction], key=lambda item: item.y)
                                     offset = closest_neighbor.y_min - y_max
+                                    perp_offset = closest_neighbor.x - current_switch.x
                                 elif direction == 'bottom':
                                     closest_neighbor = max(neighbor_list_dict[direction], key=lambda item: item.y)
                                     offset = y_min - closest_neighbor.y_max
+                                    perp_offset = closest_neighbor.x - current_switch.x
 
-                                current_switch.set_neighbor(neighbor = closest_neighbor, neighbor_name = direction, offset = offset, neighbor_group = neighbor_group)
+                                current_switch.set_neighbor(neighbor = closest_neighbor, neighbor_name = direction, offset = offset, neighbor_group = neighbor_group, perp_offset = perp_offset)
                             else:
                                 self.logger.debug('set switch %s no neighbor %s', str(current_switch), direction)
                                 closest_neighbor = None
