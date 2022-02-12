@@ -11,10 +11,15 @@ import os
 import subprocess
 import time
 
+import graphviz
+
+
 from solid import *
 from solid.utils import *
 
 from keyboard import Keyboard
+
+graph = False
 
 logger = logging.getLogger('generator')
 logger.setLevel(logging.INFO)
@@ -80,6 +85,7 @@ def main():
     output_base_folder = base_path / layout_name
     scad_folder_path = output_base_folder / 'scad'
     stl_folder_path = output_base_folder / 'stl'
+    graph_folder_path = output_base_folder / 'graph'
 
     if output_base_folder.is_dir() == False:
         output_base_folder.mkdir()
@@ -90,6 +96,9 @@ def main():
     if stl_folder_path.is_dir() == False:
         stl_folder_path.mkdir()
 
+    if graph == True and graph_folder_path.is_dir() == False:
+        graph_folder_path.mkdir()
+
     logger.debug('layout_name: %s', str(layout_name))
     logger.debug('base_path: %s', str(base_path))
     logger.debug('file_name_only: %s', str(file_name_only))
@@ -97,6 +106,7 @@ def main():
 
     scad_postfix = '.scad'
     stl_postfix  = '.stl'
+    gv_postfix  = '.gv'
 
     # scad_output_file_name = layout_name + scad_postfix
     # stl_output_file_name = layout_name + stl_postfix
@@ -211,6 +221,11 @@ def main():
 
     subprocess_dict = {}
 
+    if graph == True:
+        gv_file_name = graph_folder_path / (layout_name + gv_postfix)
+        logger.info('Global: %s', gv_file_name)
+        keyboard.switch_collection.neighbor_check('global', gv_file_name)
+
     for section in rendered_object_dict.keys():
         section_postfix = ''
         if section > -1:
@@ -218,6 +233,11 @@ def main():
 
         if args.exploded == True:
             section_postfix = '_exploded'
+
+        if graph == True and section_postfix != '':
+            gv_file_name = graph_folder_path / (layout_name + section_postfix + gv_postfix)
+            logger.info('Local: %s', gv_file_name)
+            keyboard.switch_section_list[section].neighbor_check('local', gv_file_name)
 
         for part_name in rendered_object_dict[section].keys():
             part_name_formatted = '_' + part_name

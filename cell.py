@@ -61,6 +61,9 @@ class Cell:
         self.y_min = self.y - self.h
         self.y_max = self.y
 
+        self.center_x = self.x + (self.w / 2)
+        self.center_y = self.y - (self.h / 2)
+
         self.rotaton = rotation
 
         self.rotation_info = {

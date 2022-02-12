@@ -6,6 +6,14 @@ import logging
 from cell import Cell
 
 class Switch(Cell):
+
+    NEIGHBOR_OPOSITE_DICT = {
+        'right': 'left',
+        'left': 'right',
+        'top': 'bottom',
+        'bottom': 'top'
+    }
+
     def __init__(self, x, y, w, h, rotation = 0.0,  r_x_offset = 0.0, r_y_offset = 0.0, kerf = 0.0, cell_value = ''):
         super().__init__(x, y, w, h, rotation,  r_x_offset, r_y_offset, kerf, cell_value = cell_value)
 
@@ -302,3 +310,13 @@ class Switch(Cell):
             return self.local_neighbors[neighbor_name]['perp_offset']
         elif neighbor_group == 'global':
             return self.global_neighbors[neighbor_name]['perp_offset']
+
+    def get_neighbor_direction_list(self):
+
+        name_list = []
+
+        for neighbor_name in self.local_neighbors.keys():
+            if isinstance(self.local_neighbors[neighbor_name], dict):
+                name_list.append(neighbor_name)
+
+        return name_list

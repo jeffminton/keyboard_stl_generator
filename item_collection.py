@@ -1,5 +1,8 @@
+from fileinput import close
 from solid import *
 from solid.utils import *
+
+import graphviz
 
 import logging
 
@@ -35,6 +38,10 @@ class ItemCollection:
 
         self.get_collection_bounds_call_count = 0
         self.get_moved_union_call_count = 0
+
+        self.dot_recurse = graphviz.Digraph()
+        self.dot = graphviz.Digraph()
+
 
     def get_collection_dict(self, rx = 0.0, ry = 0.0):
         return self.collection[rx][ry]
@@ -150,7 +157,7 @@ class ItemCollection:
 
     
     def set_collection_neighbors(self, neighbor_group = 'local'):
-        self.logger.info('Set %s neighbors', neighbor_group)
+        self.logger.debug('Set %s neighbors', neighbor_group)
         for rx in self.get_rx_list():
             for ry in self.get_ry_list_in_rx(rx):
                 for x in self.get_x_list_in_rx_ry(rx, ry):
@@ -159,18 +166,18 @@ class ItemCollection:
                         current_switch = self.get_item(x, y, rx, ry)
                         all_neighbors_set = current_switch.get_all_neighbors_set(neighbor_group = neighbor_group)
                         if all_neighbors_set == False:
-                            self.logger.info('set_collection_neighbors call set_item_neighbor for switch %s', str(current_switch))
+                            self.logger.debug('set_collection_neighbors call set_item_neighbor for switch %s', str(current_switch))
                             self.set_item_neighbor(current_switch, neighbor_group = neighbor_group)
 
     
     
-    def set_item_neighbor(self, item: Switch, neighbor_group = 'local', tabs = '\t'):
+    def set_item_neighbor(self, item: Switch, neighbor_group = 'local', tabs = ''):
         # for rx in self.get_rx_list():
         #     for ry in self.get_ry_list_in_rx(rx):
         #         for x in self.get_x_list_in_rx_ry(rx, ry):
         #             for y in self.get_y_list_in_rx_ry_x(x, rx, ry):
         # current_switch = self.get_item(x, y, rx, ry)
-        self.logger.info('%sSet neighbors for switch %s', tabs, str(item))
+        self.logger.debug('%sSet neighbors for switch %s', tabs, str(item))
         
         x_min = item.x
         x_max = item.x + item.w
@@ -183,6 +190,14 @@ class ItemCollection:
             'top': [],
             'bottom': []
         }
+
+        neighbor_oposite_dict = {
+            'right': 'left',
+            'left': 'right',
+            'top': 'bottom',
+            'bottom': 'top'
+        }
+
 
         for sib_rx in self.get_rx_list():
             for sib_ry in self.get_ry_list_in_rx(sib_rx):
@@ -218,7 +233,7 @@ class ItemCollection:
             offset = 0.0
             
             if len(neighbor_list_dict[direction]) > 0: 
-                closest_neighbor = None
+                closest_neighbor: Switch = None
 
                 if direction == 'right':
                     closest_neighbor = min(neighbor_list_dict[direction], key=lambda item: item.x)
@@ -238,6 +253,8 @@ class ItemCollection:
                     perp_offset = closest_neighbor.x - item.x
 
                 item.set_neighbor(neighbor = closest_neighbor, neighbor_name = direction, offset = offset, neighbor_group = neighbor_group, perp_offset = perp_offset)
+                closest_neighbor.set_neighbor(neighbor = item, neighbor_name = Switch.NEIGHBOR_OPOSITE_DICT[direction], offset = offset, neighbor_group = neighbor_group, perp_offset = perp_offset)
+                closest_neighbor.update_all_neighbors_set(neighbor_group = neighbor_group)
             else:
                 self.logger.debug('set switch %s no neighbor %s', str(item), direction)
                 closest_neighbor = None
@@ -246,6 +263,9 @@ class ItemCollection:
         item.update_all_neighbors_set(neighbor_group = neighbor_group)
 
         all_neighbors_set = item.get_all_neighbors_set(neighbor_group = neighbor_group)
+
+        pos = '%f,%f!' % (item.center_x, item.center_y)
+        self.dot_recurse.node(item.cell_value, pos = pos)
 
         if all_neighbors_set == True:
             for direction in neighbor_list_dict.keys():
@@ -257,7 +277,11 @@ class ItemCollection:
 
                     if neighbor_all_neighbors_set == False:
                         # self.logger.info('\t\tset neighbors for neighbor switch %s', str(neighbor))
-                        self.set_item_neighbor(neighbor, neighbor_group = neighbor_group, tabs = tabs + '\t')
+                        pos = '%f,%f!' % (neighbor.center_x, neighbor.center_y)
+                        self.dot_recurse.node(neighbor.cell_value, pos = pos)
+                        self.dot_recurse.edge(item.cell_value, neighbor.cell_value)
+
+                        self.set_item_neighbor(neighbor, neighbor_group = neighbor_group, tabs = tabs + ' ')
 
 
 
@@ -276,3 +300,48 @@ class ItemCollection:
                 solid += rotated_polygon
                 
         return solid
+
+
+
+    def render_graph(self, output_filename):
+        self.dot.render(output_filename, engine = 'neato')
+
+        filename = output_filename.name.replace('.gv', '_recurse.gv')
+        path = output_filename.parent
+        self.logger.info('type(output_filename): %s', str(type(output_filename)))
+
+        self.dot_recurse.render(path / filename, engine = 'neato')
+
+
+    def neighbor_check(self, neighbor_group = 'local', output_filename = ''):
+        self.dot = graphviz.Digraph(comment='Keyboard')
+        for rx in self.get_rx_list():
+            for ry in self.get_ry_list_in_rx(rx):
+                for x in self.get_x_list_in_rx_ry(rx, ry):
+                    for y in self.get_y_list_in_rx_ry_x(x, rx, ry):
+                        item: Switch
+                        item = self.get_item(x, y, rx, ry)
+
+                        item_cell_value = item.cell_value
+
+                        pos = '%f,%f!' % (item.center_x, item.center_y)
+                        self.dot.node(item_cell_value, pos = pos)
+
+                        for direction in item.get_neighbor_direction_list():
+                            reverse_direction = Switch.NEIGHBOR_OPOSITE_DICT[direction]
+                            neighbor: Switch = item.get_neighbor(direction, neighbor_group = neighbor_group)
+
+                            if neighbor is not None:
+                                neighbor_cell_value = neighbor.cell_value
+                                pos = '%f,%f!' % (neighbor.center_x, neighbor.center_y)
+                                self.dot.node(neighbor_cell_value, pos = pos)
+                                self.dot.edge(item_cell_value, neighbor_cell_value)
+
+                                reverse_neighbor: Switch = neighbor.get_neighbor(reverse_direction, neighbor_group = neighbor_group)
+
+                                reverse_neighbor_cell_value = reverse_neighbor.cell_value
+
+                                if item_cell_value != reverse_neighbor_cell_value:
+                                    self.logger.debug('Cell "%s" %s neighbor "%s" reverse neighbor %s has has different value %s', item_cell_value, direction, neighbor_cell_value, reverse_direction, reverse_neighbor_cell_value)
+        
+        self.dot.render(output_filename, engine = 'neato')
