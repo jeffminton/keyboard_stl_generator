@@ -85,6 +85,7 @@ class Body():
         self.case_height_extra_fill = self.case_height + self.case_height_extra
         self.side_margin_diff = self.right_margin - self.left_margin
         self.top_margin_diff = self.bottom_margin - self.top_margin
+        self.screw_tap_hole_diameter = self.screw_diameter - 0.35
         self.screw_hole_body_diameter = self.screw_diameter + (self.screw_hole_body_wall_width * 2)
         self.screw_hole_body_radius = self.screw_hole_body_diameter / 2
         self.x_screw_width = self.real_case_width - ((self.screw_edge_inset * 2))# + self.screw_diameter)
@@ -235,7 +236,7 @@ class Body():
         # Return the case wall object
         return case_wall
 
-    def case(self, body_block_only = False):
+    def case(self, body_block_only = False, plate_only = False):
         # Get the margins for the plate without the ammount that the minkowski will add
         pre_minkowski_x_margin = ((self.right_margin + self.left_margin) / 2 - self.plate_corner_radius)
         pre_minkowski_y_margin = ((self.top_margin + self.bottom_margin) / 2 - self.plate_corner_radius)
@@ -254,7 +255,7 @@ class Body():
         case_object = self.plate(case_x, case_y, pre_minkowski_thickness, corner)
 
         # If not only making the plate add the case border to the case object
-        if self.plate_only == False:
+        if plate_only == False:
             case_object += self.case_border(case_x, case_y, corner)
 
         # move case_object to line up with board
@@ -270,9 +271,12 @@ class Body():
         return case_object
 
 
-    def screw_hole(self):
+    def screw_hole(self, tap = False):
         try:
-            radius = self.screw_diameter / 2
+            if tap == False:
+                radius = self.screw_diameter / 2
+            else:
+                radius = self.screw_tap_hole_diameter / 2
         except:
             return None
 
@@ -313,10 +317,6 @@ class Body():
 
 
     def screw_hole_body(self, left_support = False, right_support = False, forward_support = False, back_support = False, screw_name = ''):
-        try:
-            radius = self.screw_diameter / 2
-        except:
-            return None
 
         hole_body = cylinder(r = self.screw_hole_body_radius, h = self.case_height_extra_fill)
 
@@ -356,7 +356,7 @@ class Body():
                 self.logger.info('No screw holes defined')
                 return None
 
-        screw_radius = self.screw_diameter / 2
+        # screw_radius = self.screw_diameter / 2
 
 
         if self.screw_edge_inset >= self.case_wall_thickness + self.screw_hole_body_radius:
@@ -434,7 +434,7 @@ class Body():
             raise ValueError('Screw Edge Inset %f must be greater than case_wall_thickness + screw_hole_body_radius: %f' % (self.screw_edge_inset, self.case_wall_thickness + self.screw_hole_body_radius))
 
 
-    def screw_hole_objects(self):
+    def screw_hole_objects(self, tap = False):
 
         if len(self.screw_hole_info.keys()) == 0:
             self.generate_screw_holes_coordinates()
@@ -477,7 +477,7 @@ class Body():
                 # self.logger.info('coord: %s', str(coord))
                 continue
 
-            hole = right(x) ( forward(y) ( self.screw_hole() ) )
+            hole = right(x) ( forward(y) ( self.screw_hole(tap = tap) ) )
             screw_hole_collection += hole
 
             right_support = False
