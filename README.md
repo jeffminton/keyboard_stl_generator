@@ -17,7 +17,7 @@ Here is an examle of the program cli usage
 
 
 ## Example
-
+### Small Layout Test
 This shows testing done using a msall layout and changing the printer build plate settings to force it to split the design up.
 
 This is an image of the layout design on keyboard-layout-editor
@@ -41,7 +41,10 @@ using the "-e" file will generate an exploded view of the case where all the sec
 
 ![small_test_exploded_top.png](/images/small_test_layout/small_test_exploded_top.png)
 
+### Full Size ANSI
+Bellow is and exploded view of the generated model for a full size keyboard
 
+![small_test_exploded_top.png](/images/full_size/full_size_exploded_top.png)
 
 
 ## Printed Part
