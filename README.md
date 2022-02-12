@@ -39,7 +39,7 @@ using the "-a" option it will generate files for 2 different models that make up
 
 using the "-e" file will generate an exploded view of the case where all the sections are shown but they are offset to be viewed more easily. See the iamge bellow
 
-![small_test_top_exploded.png](/images/small_test_layout/small_test_top_exploded.png)
+![small_test_exploded_top.png](/images/small_test_layout/small_test_exploded_top.png)
 
 
 
