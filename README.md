@@ -1,12 +1,18 @@
-# Keyboard Case and Plate STL Generator With Automatic Model Segmentation
+- [Keyboard Case and Plate STL Generator With Automatic Model Segmentation](#keyboard-case-and-plate-stl-generator-with-automatic-model-segmentation)
+  - [How it Works](#how-it-works)
+  - [Example](#example)
+    - [Small Layout Test](#small-layout-test)
+    - [Full Size ANSI](#full-size-ansi)
+  - [Printed Part](#printed-part)
+  - [Acknowledgements](#acknowledgements)
 
+# Keyboard Case and Plate STL Generator With Automatic Model Segmentation
 This is meant to generate a scad and or stl file from a [keyboard-layout-editor](http://www.keyboard-layout-editor.com/) layout file. 
 
 Additionally the model can be automatically segmented so that the parts will fit within the build area of your 3d printer
 
 
 ## How it Works
-
 The program takes a keyboard-layout-editor json file as one of the inputs along with an optional parameter json file to customize other parts of the resulting model
 
 The program can then genarate a number of different items. The entire case can be generated as a single model or the case can be broken up so that parts will fit within the build size of your 3d printer. The build size is one of the values that can be places in the optional parameters file.
@@ -24,11 +30,9 @@ This is an image of the layout design on keyboard-layout-editor
 
 ![small_test_layout.png](/images/small_test_layout/small_test_layout.png)
 
-
 if just passing in the layput fle with the "-i" option the entire case will be generated. An example of the top of the case of that model is shown bellow
 
 ![small_test_top.png](/images/small_test_layout/small_test_top.png)
-
 
 using the "-a" option it will generate files for 2 different models that make up the entire layout. The images bellow show the separate section top case models
 
@@ -41,6 +45,7 @@ using the "-e" file will generate an exploded view of the case where all the sec
 
 ![small_test_exploded_top.png](/images/small_test_layout/small_test_exploded_top.png)
 
+
 ### Full Size ANSI
 Bellow is and exploded view of the generated model for a full size keyboard
 
@@ -48,7 +53,6 @@ Bellow is and exploded view of the generated model for a full size keyboard
 
 
 ## Printed Part
-
 Here are some pictures of that raw parts from the printer and the assembled case
 
 Topside of Top
@@ -79,7 +83,5 @@ Assembeled Tilt
 ![assembled_tile.jpg](/images/small_test_layout/assembled_tilt.jpg)
 
 
-
 ## Acknowledgements
-
 Shout out to Will Stevens https://github.com/swill for his plate generator that provided inspiration and very useful measurements. The swillkb plate and case generator is here http://builder.swillkb.com/
