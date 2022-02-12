@@ -5,25 +5,27 @@
     "x_build_size" : 80,
     "y_build_size" : 80,
 
-    "kerf" : 0.1,
+    "kerf" : 0.05,
 
     "top_margin" : 12,
     "bottom_margin" : 12,
     "left_margin" : 12,
     "right_margin" : 12,
-    "case_height" : 20,
+    "case_height" : 10,
     "plate_wall_thickness" : 3.0,
     "plate_thickness" : 1.311,
     "plate_corner_radius" : 4,
 
     "support_bar_height" : 3.0,
-    "support_bar_width" : 1.0,
+    "support_bar_width" : 3.0,
 
     "tilt": 5,
 
     "cable_hole": true,
+    "cable_hole_up_offset": 0,
+    "cable_hole_down_offset": 1,
     "hole_width": 10,
-    "hole_height": 10,
+    "hole_height": 5,
 
     "screw_count": 8,
     "screw_diameter": 4,
