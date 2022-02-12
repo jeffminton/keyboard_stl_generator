@@ -165,30 +165,34 @@ class Switch(Cell):
 
 
     def get_stab_cutout_spacing(self):
+        key_width = self.w
+        
+        if self.vertical == True:
+            key_width = self.h
     
-        if self.w >= 2.0 and self.w < 3.0: # 2u, 2.25u, 2.5u, 2.75u
+        if key_width >= 2.0 and key_width < 3.0: # 2u, 2.25u, 2.5u, 2.75u
             return 11.9
-        elif self.w == 3: # 3u
+        elif key_width == 3: # 3u
             return 19.05
-        elif self.w == 4: # 4u
+        elif key_width == 4: # 4u
             return 28.575
-        elif self.w == 4.5: # 4.5u
+        elif key_width == 4.5: # 4.5u
             return 34.671
-        elif self.w == 5.5: # 5.5u
+        elif key_width == 5.5: # 5.5u
             return 42.8625
-        elif self.w == 6: # 6u
+        elif key_width == 6: # 6u
             return 47.5
-        elif self.w == 6.25: # 6.25u
+        elif key_width == 6.25: # 6.25u
             return 50
-        elif self.w == 6.5: # 6.5u
+        elif key_width == 6.5: # 6.5u
             return 52.38
-        elif self.w == 7: # 7u
+        elif key_width == 7: # 7u
             return 57.15
-        elif self.w == 8: # 8u
+        elif key_width == 8: # 8u
             return 66.675
-        elif self.w == 9: # 9u
+        elif key_width == 9: # 9u
             return 66.675
-        elif self.w == 10: # 10u
+        elif key_width == 10: # 10u
             return 66.675
         else:
             return -1
