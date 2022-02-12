@@ -71,6 +71,7 @@ class Keyboard():
         self.desired_section_number = -1
 
         self.cable_hole_up_offset = 1
+        self.cable_hole_down_offset = 1
 
         self.cable_hole = False
 
@@ -203,12 +204,12 @@ class Keyboard():
 
                 y += 1
 
-        self.switch_collection.set_item_neighbors('global')
+        self.switch_collection.set_collection_neighbors('global')
 
         # create sections of the keyboard for usin in splitting for printing
         self.split_keyboard()
 
-    def get_assembly(self, top = False, bottom = False, all = True):
+    def get_assembly(self, top = False, bottom = False, all = True, plate_only = False):
         # Init top_assembly and bottom_assembly objects
         top_assembly = union()
         bottom_assembly = union()
@@ -264,7 +265,7 @@ class Keyboard():
         self.body.set_dimensions(max_x, min_y, min_x, max_y)
         
         # Add case to top_assembly
-        top_assembly += self.body.case()
+        top_assembly += self.body.case(plate_only = plate_only)
 
         if self.get_param('simple_test') == False:
             # Remove switch suport cutouts
@@ -277,7 +278,7 @@ class Keyboard():
             top_assembly -= self.switch_cutouts
         
         # Generate screw hole related objects
-        screw_hole_collection, screw_hole_body_collection = self.body.screw_hole_objects()
+        screw_hole_collection, screw_hole_body_collection = self.body.screw_hole_objects(tap = bottom)
 
         # Remove screw holes from top top_assembly
         top_assembly -= screw_hole_collection
@@ -296,11 +297,12 @@ class Keyboard():
             # bottom_assembly -= self.get_bottom_section_remove_block(self.desired_section_number)
         
         # Move top_assembly so that the bottom left sits at 0, 0, 0
-        top_assembly = up(self.body.case_height_base_removed + (self.plate_thickness / 2)) ( forward(Cell.u(abs(min_y)) + self.bottom_margin) ( right(self.left_margin) ( top_assembly ) ) )
-        bottom_assembly = up(self.body.case_height_base_removed + (self.plate_thickness / 2)) ( forward(Cell.u(abs(min_y)) + self.bottom_margin) ( right(self.left_margin) ( bottom_assembly ) ) )
-        body_block = up(self.body.case_height_base_removed + (self.plate_thickness / 2)) ( forward(Cell.u(abs(min_y)) + self.bottom_margin) ( right(self.left_margin) ( body_block ) ) )
+        top_assembly = up(self.body.case_height_base_removed - (self.plate_thickness / 2)) ( forward(Cell.u(abs(min_y)) + self.bottom_margin) ( right(self.left_margin) ( top_assembly ) ) )
+        bottom_assembly = up(self.body.case_height_base_removed - (self.plate_thickness / 2)) ( forward(Cell.u(abs(min_y)) + self.bottom_margin) ( right(self.left_margin) ( bottom_assembly ) ) )
+        screw_hole_collection = up(self.body.case_height_base_removed - (self.plate_thickness / 2)) ( forward(Cell.u(abs(min_y)) + self.bottom_margin) ( right(self.left_margin) ( screw_hole_collection ) ) )
+        body_block = up(self.body.case_height_base_removed - (self.plate_thickness / 2)) ( forward(Cell.u(abs(min_y)) + self.bottom_margin) ( right(self.left_margin) ( body_block ) ) )
         if self.desired_section_number > -1:
-            bottom_section_inclusion = up(self.body.case_height_base_removed + (self.plate_thickness / 2)) ( forward(Cell.u(abs(min_y)) + self.bottom_margin) ( right(self.left_margin) ( bottom_section_inclusion ) ) )
+            bottom_section_inclusion = up(self.body.case_height_base_removed - (self.plate_thickness / 2)) ( forward(Cell.u(abs(min_y)) + self.bottom_margin) ( right(self.left_margin) ( bottom_section_inclusion ) ) )
 
         # Create block that will remove material to make case bottom flat
         bottom_diff_plate = down(self.body.case_height_extra * 2) ( back(self.body.real_max_y / 2) ( left(self.body.real_max_x / 2) ( cube([self.body.real_max_x * 2, self.body.real_max_y * 2, self.body.case_height_extra * 2 ]) ) ) )
@@ -312,6 +314,7 @@ class Keyboard():
         if self.tilt > 0.0:
             top_assembly = rotate(self.tilt, [1, 0, 0]) ( top_assembly )
             bottom_assembly = rotate(self.tilt, [1, 0, 0]) ( bottom_assembly )
+            screw_hole_collection = rotate(self.tilt, [1, 0, 0]) ( screw_hole_collection )
             body_block = rotate(self.tilt, [1, 0, 0]) ( body_block )
 
         # Remove bottom block to make bottom of case flat
@@ -325,6 +328,8 @@ class Keyboard():
         bottom_assembly += self.body.bottom_cover() * body_block
         if self.desired_section_number > -1:
             bottom_assembly *= bottom_section_inclusion
+
+        bottom_assembly -= screw_hole_collection
 
         # # TEST ####
         # # Union together all rotated supports
@@ -351,7 +356,7 @@ class Keyboard():
         # ############
 
 
-        if top == True:
+        if top == True or plate_only == True:
             return top_assembly
         elif bottom == True:
             return bottom_assembly 
@@ -363,7 +368,13 @@ class Keyboard():
     def get_cable_hole(self):
 
         if self.cable_hole == True:
-            return up(self.cable_hole_up_offset + (self.hole_height / 2)) ( right(self.left_margin + (self.body.real_max_x / 2)) ( forward(self.bottom_margin + self.top_margin + self.body.real_max_y) ( cube([self.hole_width, self.plate_wall_thickness * 2, self.hole_height], center = True) ) ) )
+            return up(self.body.case_height_base_removed - (self.hole_height / 2) - self.body.plate_thickness - self.cable_hole_down_offset ) (
+                right(self.left_margin + (self.body.real_max_x / 2)) ( 
+                    forward(self.bottom_margin + self.top_margin + self.body.real_max_y) ( 
+                        cube([self.hole_width, self.plate_wall_thickness * 2, self.hole_height], center = True) 
+                    ) 
+                ) 
+            )
         else:
             return union()
 
@@ -442,7 +453,7 @@ class Keyboard():
 
         for idx, section in enumerate(self.switch_section_list):
             self.logger.debug('Set Item neighbors for section %d', idx)
-            section.set_item_neighbors()
+            section.set_collection_neighbors()
 
     def get_top_section_remove_block(self, section_number):
         section = self.switch_section_list[section_number]

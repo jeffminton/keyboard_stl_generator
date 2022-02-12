@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python3
 
 import argparse
 from asyncio import subprocess
@@ -54,7 +54,7 @@ def main():
     parser.add_argument('-p', '--parameter-file', metavar = 'parameters.json', help = 'A JSON file containing paramters for the object buing made', default = None, action=CheckExt({'json'}))
     parser.add_argument('-s', '--section', metavar = 'section_num', help = 'The number of the section that should be built', type = int, default = -1)
     parser.add_argument('-a', '--all-sections', help = 'Output all the parts for all possible sections in separate files', default = False, action = 'store_true')
-    parser.add_argument('-t', '--test-sections', help = 'Create test file with all section seprated in z direction to check for fit', default = False, action = 'store_true')
+    parser.add_argument('-e', '--exploded', help = 'Create test file with each section shown as an exploded view', default = False, action = 'store_true')
     parser.add_argument('-f', '--fragments', metavar = 'num_fragments', help = 'The number of fragments to be used when creating curves', type = int, default = 8)
     parser.add_argument('-r', '--render', help = 'Render an STL from the generated scad file', default = False, action = 'store_true')
 
@@ -177,26 +177,29 @@ def main():
             if section < keyboard.get_bottom_section_count():
                 rendered_object_dict[section]['bottom'] = keyboard.get_assembly(bottom = True)
             rendered_object_dict[section]['all'] = keyboard.get_assembly(all = True)
-    elif args.test_sections == True:
+            rendered_object_dict[section]['plate'] = keyboard.get_assembly(plate_only = True)
+    elif args.exploded == True:
         rendered_object_dict[-1] = {}
         rendered_object_dict[-1]['top'] = union()
         rendered_object_dict[-1]['bottom'] = union()
         for section in range(keyboard.get_top_section_count()):
             keyboard.set_section(section)
-            rendered_object_dict[-1]['top'] += up(5 * section) ( keyboard.get_assembly(top = True) )
+            rendered_object_dict[-1]['top'] += up(5 * section) ( right(10 * section) ( keyboard.get_assembly(top = True) ) )
             if section < keyboard.get_bottom_section_count():
-                rendered_object_dict[-1]['bottom'] += up(5 * section) ( keyboard.get_assembly(bottom = True) )
+                rendered_object_dict[-1]['bottom'] += up(5 * section) ( right(10 * section) ( keyboard.get_assembly(bottom = True) ) )
     elif args.section > -1:
         # Get the full keyboard assembly
         rendered_object_dict[args.section] = {}
         rendered_object_dict[args.section]['top'] = keyboard.get_assembly(top = True)
         rendered_object_dict[args.section]['bottom'] = keyboard.get_assembly(bottom = True)
         rendered_object_dict[args.section]['all'] = keyboard.get_assembly(all = True)
+        rendered_object_dict[args.section]['plate'] = keyboard.get_assembly(plate_only = True)
     elif args.section == -1:
         rendered_object_dict[args.section] = {}
         rendered_object_dict[args.section]['top'] = keyboard.get_assembly(top = True)
         rendered_object_dict[args.section]['bottom'] = keyboard.get_assembly(bottom = True)
         rendered_object_dict[args.section]['all'] = keyboard.get_assembly(all = True)
+        rendered_object_dict[args.section]['plate'] = keyboard.get_assembly(plate_only = True)
         
 
     logger.info('Sections In Top: %d', keyboard.get_top_section_count())
@@ -212,6 +215,9 @@ def main():
         section_postfix = ''
         if section > -1:
             section_postfix = '_section_%d' % (section)
+
+        if args.exploded == True:
+            section_postfix = '_exploded'
 
         for part_name in rendered_object_dict[section].keys():
             part_name_formatted = '_' + part_name
@@ -239,13 +245,19 @@ def main():
             for stl_file_name in subprocess_dict.keys():
                 p = subprocess_dict[stl_file_name]
                 if p is not None:
-                    running = True
-                    rcode = p.poll()
+                    # running = True
+                    rcode = None
+                    try:
+                        rcode = p.wait(.1)
+                    except subprocess.TimeoutExpired as err:
+                        logger.debug('Wait Timeout: %s', str(err))
+                        running = True
                     if rcode is not None:
-                        logger.info('file: %s, process: %s complete, return code %s', stl_file_name, str(p), str(rcode))
+                        logger.info('Render Complete: file: %s', stl_file_name)
                         subprocess_dict[stl_file_name] = None
-            time.sleep(1)
+            # time.sleep(1)
 
+    logger.info('Generation Complete')
 
 if __name__ == "__main__":
     main()
