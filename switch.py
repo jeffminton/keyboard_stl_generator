@@ -221,7 +221,32 @@ class Switch(Cell):
         else:
             return None
 
-    # def check_all_neighbors_set(self):
+    def update_all_neighbors_set(self, neighbor_group = 'local'):
+
+        if neighbor_group == 'local':
+            neighbor_dict = self.local_neighbors
+        elif neighbor_group == 'global':
+            neighbor_dict =  self.global_neighbors
+
+            
+        all_neighbors_set = True
+        for direction in neighbor_dict.keys():
+            if direction != 'neighbor_check_complete':
+                if len(neighbor_dict[direction].keys()) == 0:
+                    all_neighbors_set = False
+
+        neighbor_dict['neighbor_check_complete'] = all_neighbors_set
+
+
+    def get_all_neighbors_set(self, neighbor_group = 'local'):
+
+        if neighbor_group == 'local':
+            neighbor_dict = self.local_neighbors
+        elif neighbor_group == 'global':
+            neighbor_dict =  self.global_neighbors
+
+        return neighbor_dict['neighbor_check_complete']
+
 
     def get_neighbor(self, neighbor_name, neighbor_group = 'local'):
         
