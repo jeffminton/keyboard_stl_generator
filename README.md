@@ -27,7 +27,7 @@ This is an image of the layout design on keyboard-layout-editor
 
 if just passing in the layput fle with the "-i" option the entire case will be generated. An example of the top of the case of that model is shown bellow
 
-![small_test.png](/images/small_test_layout/small_test.png)
+![small_test_top.png](/images/small_test_layout/small_test_top.png)
 
 
 using the "-a" option it will generate files for 2 different models that make up the entire layout. The images bellow show the separate section top case models
