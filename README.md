@@ -1,5 +1,8 @@
 - [Keyboard Case and Plate STL Generator With Automatic Model Segmentation](#keyboard-case-and-plate-stl-generator-with-automatic-model-segmentation)
   - [How it Works](#how-it-works)
+  - [Setup](#setup)
+    - [Requirements](#requirements)
+    - [Usage](#usage)
   - [Example](#example)
     - [Small Layout Test](#small-layout-test)
     - [Full Size ANSI](#full-size-ansi)
@@ -17,70 +20,83 @@ The program takes a keyboard-layout-editor json file as one of the inputs along 
 
 The program can then genarate a number of different items. The entire case can be generated as a single model or the case can be broken up so that parts will fit within the build size of your 3d printer. The build size is one of the values that can be places in the optional parameters file.
 
-Here is an examle of the program cli usage
 
-![keyboard_stl_generator.py usage](/images/usage.png)
+## Setup
+### Requirements
 
+- Python: Python is required to run the program. This was built using Python 3.8.10 but I expect newer versions should work fine
+
+- [SolidPython](https://github.com/SolidCode/SolidPython): This program relies on SolidPython to generate the actual OpenSCAD script. To install SolidPython you can most likely use the command bellow
+
+  ```
+       pip install solidpython
+  ```
+- [OpenSCAD](https://openscad.org/): In order to render STL files you will have to have OpenSCAD installed and the OpenSCAD executable must be on your path. OpenSCAD downloads can be found here https://openscad.org/downloads.html
+
+### Usage
+- Here is an examle of the program cli usage
+
+  ![keyboard_stl_generator.py usage](/images/usage.png)
 
 ## Example
 ### Small Layout Test
-This shows testing done using a msall layout and changing the printer build plate settings to force it to split the design up.
+- This shows testing done using a msall layout and changing the printer build plate settings to force it to split the design up.
 
-This is an image of the layout design on keyboard-layout-editor
+  This is an image of the layout design on keyboard-layout-editor
 
-![small_test_layout.png](/images/small_test_layout/small_test_layout.png)
+  ![small_test_layout.png](/images/small_test_layout/small_test_layout.png)
 
-if just passing in the layput fle with the "-i" option the entire case will be generated. An example of the top of the case of that model is shown bellow
+- if just passing in the layput fle with the "-i" option the entire case will be generated. An example of the top of the case of that model is shown bellow
 
-![small_test_top.png](/images/small_test_layout/small_test_top.png)
+  ![small_test_top.png](/images/small_test_layout/small_test_top.png)
 
-using the "-a" option it will generate files for 2 different models that make up the entire layout. The images bellow show the separate section top case models
+- using the "-a" option it will generate files for 2 different models that make up the entire layout. The images bellow show the separate section top case models
 
-![small_test_top_0.png](/images/small_test_layout/small_test_top_0.png)
+  ![small_test_top_0.png](/images/small_test_layout/small_test_top_0.png)
 
-![small_test_top_1.png](/images/small_test_layout/small_test_top_1.png)
+  ![small_test_top_1.png](/images/small_test_layout/small_test_top_1.png)
 
 
-using the "-e" file will generate an exploded view of the case where all the sections are shown but they are offset to be viewed more easily. See the iamge bellow
+- using the "-e" file will generate an exploded view of the case where all the sections are shown but they are offset to be viewed more easily. See the iamge bellow
 
-![small_test_exploded_top.png](/images/small_test_layout/small_test_exploded_top.png)
+  ![small_test_exploded_top.png](/images/small_test_layout/small_test_exploded_top.png)
 
 
 ### Full Size ANSI
-Bellow is and exploded view of the generated model for a full size keyboard
+- Bellow is and exploded view of the generated model for a full size keyboard
 
-![small_test_exploded_top.png](/images/full_size/full_size_exploded_top.png)
+  ![small_test_exploded_top.png](/images/full_size/full_size_exploded_top.png)
 
 
 ## Printed Part
 Here are some pictures of that raw parts from the printer and the assembled case
 
-Topside of Top
-![top_topside.jpg](/images/small_test_layout/top_topside.jpg)
+- Topside of Top
+  ![top_topside.jpg](/images/small_test_layout/top_topside.jpg)
 
-Underside of Top
-![top_underside.jpg](/images/small_test_layout/top_underside.jpg)
+- Underside of Top
+  ![top_underside.jpg](/images/small_test_layout/top_underside.jpg)
 
-Top edge on view
-![top_edge.jpg](/images/small_test_layout/top_edge.jpg)
+- Top edge on view
+  ![top_edge.jpg](/images/small_test_layout/top_edge.jpg)
 
-Focus on stabilizer cutout
-![top_stab_cutout.jpg](/images/small_test_layout/top_stab_cutout.jpg)
+- Focus on stabilizer cutout
+  ![top_stab_cutout.jpg](/images/small_test_layout/top_stab_cutout.jpg)
 
-Bottom
-![bottom.jpg](/images/small_test_layout/bottom.jpg)
+- Bottom
+  ![bottom.jpg](/images/small_test_layout/bottom.jpg)
 
-Bottom edge on view
-![bottom_edge.jpg](/images/small_test_layout/bottom_edge.jpg)
+- Bottom edge on view
+  ![bottom_edge.jpg](/images/small_test_layout/bottom_edge.jpg)
 
-Assembeled Front
-![assembled_front.jpg](/images/small_test_layout/assembled_front.jpg)
+- Assembeled Front
+  ![assembled_front.jpg](/images/small_test_layout/assembled_front.jpg)
 
-Assembeled Side
-![assembled_side.jpg](/images/small_test_layout/assembled_side.jpg)
+- Assembeled Side
+  ![assembled_side.jpg](/images/small_test_layout/assembled_side.jpg)
 
-Assembeled Tilt 
-![assembled_tile.jpg](/images/small_test_layout/assembled_tilt.jpg)
+- Assembeled Tilt 
+  ![assembled_tile.jpg](/images/small_test_layout/assembled_tilt.jpg)
 
 
 ## Acknowledgements
