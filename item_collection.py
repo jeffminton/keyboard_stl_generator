@@ -2,7 +2,7 @@ from fileinput import close
 from solid import *
 from solid.utils import *
 
-import graphviz
+# import graphviz
 
 import logging
 
@@ -39,8 +39,8 @@ class ItemCollection:
         self.get_collection_bounds_call_count = 0
         self.get_moved_union_call_count = 0
 
-        self.dot_recurse = graphviz.Digraph()
-        self.dot = graphviz.Digraph()
+        # self.dot_recurse = graphviz.Digraph()
+        # self.dot = graphviz.Digraph()
 
 
     def get_collection_dict(self, rx = 0.0, ry = 0.0):
@@ -264,8 +264,8 @@ class ItemCollection:
 
         all_neighbors_set = item.get_all_neighbors_set(neighbor_group = neighbor_group)
 
-        pos = '%f,%f!' % (item.center_x, item.center_y)
-        self.dot_recurse.node(item.cell_value, pos = pos)
+        # pos = '%f,%f!' % (item.center_x, item.center_y)
+        # self.dot_recurse.node(item.cell_value, pos = pos)
 
         if all_neighbors_set == True:
             for direction in neighbor_list_dict.keys():
@@ -277,9 +277,9 @@ class ItemCollection:
 
                     if neighbor_all_neighbors_set == False:
                         # self.logger.info('\t\tset neighbors for neighbor switch %s', str(neighbor))
-                        pos = '%f,%f!' % (neighbor.center_x, neighbor.center_y)
-                        self.dot_recurse.node(neighbor.cell_value, pos = pos)
-                        self.dot_recurse.edge(item.cell_value, neighbor.cell_value)
+                        # pos = '%f,%f!' % (neighbor.center_x, neighbor.center_y)
+                        # self.dot_recurse.node(neighbor.cell_value, pos = pos)
+                        # self.dot_recurse.edge(item.cell_value, neighbor.cell_value)
 
                         self.set_item_neighbor(neighbor, neighbor_group = neighbor_group, tabs = tabs + ' ')
 
@@ -304,17 +304,17 @@ class ItemCollection:
 
 
     def render_graph(self, output_filename):
-        self.dot.render(output_filename, engine = 'neato')
+        # self.dot.render(output_filename, engine = 'neato')
 
         filename = output_filename.name.replace('.gv', '_recurse.gv')
         path = output_filename.parent
         self.logger.info('type(output_filename): %s', str(type(output_filename)))
 
-        self.dot_recurse.render(path / filename, engine = 'neato')
+        # self.dot_recurse.render(path / filename, engine = 'neato')
 
 
     def neighbor_check(self, neighbor_group = 'local', output_filename = ''):
-        self.dot = graphviz.Digraph(comment='Keyboard')
+        # self.dot = graphviz.Digraph(comment='Keyboard')
         for rx in self.get_rx_list():
             for ry in self.get_ry_list_in_rx(rx):
                 for x in self.get_x_list_in_rx_ry(rx, ry):
@@ -324,8 +324,8 @@ class ItemCollection:
 
                         item_cell_value = item.cell_value
 
-                        pos = '%f,%f!' % (item.center_x, item.center_y)
-                        self.dot.node(item_cell_value, pos = pos)
+                        # pos = '%f,%f!' % (item.center_x, item.center_y)
+                        # self.dot.node(item_cell_value, pos = pos)
 
                         for direction in item.get_neighbor_direction_list():
                             reverse_direction = Switch.NEIGHBOR_OPOSITE_DICT[direction]
@@ -333,9 +333,9 @@ class ItemCollection:
 
                             if neighbor is not None:
                                 neighbor_cell_value = neighbor.cell_value
-                                pos = '%f,%f!' % (neighbor.center_x, neighbor.center_y)
-                                self.dot.node(neighbor_cell_value, pos = pos)
-                                self.dot.edge(item_cell_value, neighbor_cell_value)
+                                # pos = '%f,%f!' % (neighbor.center_x, neighbor.center_y)
+                                # self.dot.node(neighbor_cell_value, pos = pos)
+                                # self.dot.edge(item_cell_value, neighbor_cell_value)
 
                                 reverse_neighbor: Switch = neighbor.get_neighbor(reverse_direction, neighbor_group = neighbor_group)
 
@@ -344,4 +344,4 @@ class ItemCollection:
                                 if item_cell_value != reverse_neighbor_cell_value:
                                     self.logger.debug('Cell "%s" %s neighbor "%s" reverse neighbor %s has has different value %s', item_cell_value, direction, neighbor_cell_value, reverse_direction, reverse_neighbor_cell_value)
         
-        self.dot.render(output_filename, engine = 'neato')
+        # self.dot.render(output_filename, engine = 'neato')
