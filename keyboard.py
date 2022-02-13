@@ -35,7 +35,7 @@ class Keyboard():
 
             self.logger.addHandler(ch)
 
-        self.modifier_include_list = ['x', 'y', 'w', 'h', 'r', 'rx', 'ry']
+        self.modifier_include_list = ['x', 'y', 'w', 'h', 'r', 'rx', 'ry', 'd']
 
         self.parameter_dict = parameter_dict
 
@@ -141,6 +141,8 @@ class Keyboard():
             h = 1.0
 
             if type(row) == type([]):
+                # A flag to be used to ignore non key data from the layout file
+                ignore_next = False
                 for col in row:               
                     if type(col) == type({}):
 
@@ -167,8 +169,11 @@ class Keyboard():
                                     rx = size
                                 if modifier_type == 'ry':
                                     ry = size
+                                if modifier_type == 'd':
+                                    self.logger.debug('Ignore next Item')
+                                    ignore_next = True
                         
-                    else:
+                    elif ignore_next == False:
                         col_escaped = col.encode("unicode_escape").decode("utf-8")
                         # split on newline character and get the lat element in the resulting list
                         col_escaped = col_escaped.split('\\n')[-1]
@@ -177,30 +182,29 @@ class Keyboard():
                         x_offset = x
                         y_offset = -(y)
 
+                        switch = Switch(x_offset, y_offset, w, h, kerf = self.kerf, rotation = rotation, cell_value = col_escaped)
+                        support = Support(x_offset, y_offset,w, h, self.plate_thickness, self.support_bar_height, self.support_bar_width, rotation = rotation)
+                        support_cutout = SupportCutout(x_offset, y_offset,w, h, self.plate_thickness, self.support_bar_height, self.support_bar_width, rotation = rotation)
+
                         # Create switch cutout and support object without rotation
                         if rotation == 0.0:
-                            self.switch_collection.add_item(x_offset, y_offset, Switch(x_offset, y_offset, w, h, kerf = self.kerf, cell_value = col_escaped))
-                            self.support_collection.add_item(x_offset, y_offset, Support(x_offset, y_offset, w, h, self.plate_thickness, self.support_bar_height, self.support_bar_width))
-                            self.support_cutout_collection.add_item(x_offset, y_offset, SupportCutout(x_offset, y_offset, w, h, self.plate_thickness, self.support_bar_height, self.support_bar_width))
+                            self.switch_collection.add_item(x_offset, y_offset, switch)    
+                            self.support_collection.add_item(x_offset, y_offset, support)
+                            self.support_cutout_collection.add_item(x_offset, y_offset, support_cutout)
                             
                             
                         # Create switch cutout and support object without rotation
                         elif rotation != 0.0:
-                            self.switch_rotation_collection.add_item(rotation, x_offset, y_offset, Switch(x_offset, y_offset, w, h, kerf = self.kerf, rotation = rotation, cell_value = col_escaped), rx, ry)
-                            self.support_rotation_collection.add_item(rotation, x_offset, y_offset, Support(x_offset, y_offset,w, h, self.plate_thickness, self.support_bar_height, self.support_bar_width, rotation = rotation), rx, ry)
-                            self.support_cutout_rotation_collection.add_item(rotation, x_offset, y_offset, SupportCutout(x_offset, y_offset,w, h, self.plate_thickness, self.support_bar_height, self.support_bar_width, rotation = rotation), rx, ry)
-
-                        # Create normal switch support outline
-                        # if rotation == 0.0:
-                            
-                            
-                        # Create rotated switch support outline
-                        # elif rotation != 0.0:
-                            
+                            self.switch_rotation_collection.add_item(rotation, x_offset, y_offset, switch, rx, ry)
+                            self.support_rotation_collection.add_item(rotation, x_offset, y_offset, support, rx, ry)
+                            self.support_cutout_rotation_collection.add_item(rotation, x_offset, y_offset, support_cutout, rx, ry)
 
                         x += w    
                         w = 1.0
                         h = 1.0
+
+                    elif ignore_next == True:
+                        ignore_next = False
 
                 y += 1
 
@@ -249,15 +253,6 @@ class Keyboard():
             self.switch_supports += self.support_rotation_collection.get_rotated_moved_union(rotation)
             self.switch_support_cutouts += self.support_cutout_rotation_collection.get_rotated_moved_union(rotation)
 
-        # Union together all rotated supports
-        # for rotation in self.support_rotation_collection.get_rotation_list():
-        #     self.switch_supports += self.support_rotation_collection.get_rotated_moved_union(rotation)
-
-        # Add rotated 
-        # self.switch_supports += self.rotate_support_collection
-        # self.switch_cutouts += self.rotate_switch_cutout_collection
-        # self.switch_cutouts = switch_cutout(2.5)
-
         # Init body object
         self.body = Body(self.parameter_dict)
 
@@ -269,11 +264,9 @@ class Keyboard():
 
         if self.get_param('simple_test') == False:
             # Remove switch suport cutouts
-            # TODO
             top_assembly -= self.switch_support_cutouts
 
             # Add switch supports and remove switch cutouts
-            # TODO
             top_assembly += self.switch_supports
             top_assembly -= self.switch_cutouts
         
@@ -282,7 +275,6 @@ class Keyboard():
 
         # Remove screw holes from top top_assembly
         top_assembly -= screw_hole_collection
-
 
         bottom_assembly = screw_hole_body_collection
         bottom_assembly -= screw_hole_collection
