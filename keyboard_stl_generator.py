@@ -11,7 +11,7 @@ import os
 import subprocess
 import time
 
-import graphviz
+# import graphviz
 
 
 from solid import *
