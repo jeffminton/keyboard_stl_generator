@@ -17,6 +17,7 @@ import time
 from solid import *
 from solid.utils import *
 
+from parameters import Parameters
 from keyboard import Keyboard
 
 graph = False
@@ -62,6 +63,7 @@ def main():
     parser.add_argument('-e', '--exploded', help = 'Create test file with each section shown as an exploded view', default = False, action = 'store_true')
     parser.add_argument('-f', '--fragments', metavar = 'num_fragments', help = 'The number of fragments to be used when creating curves', type = int, default = 8)
     parser.add_argument('-r', '--render', help = 'Render an STL from the generated scad file', default = False, action = 'store_true')
+    parser.add_argument('--switch-type-in-filename', help = 'Add the switch type name and stabilizer type name to the filname', default = False, action = 'store_true')
 
     
     rendered_object_dict = {}
@@ -164,9 +166,10 @@ def main():
             logger.error('Failed to parse json after attempt at correction.')
             raise
 
+    parameters = Parameters(parameter_dict)
     
     # Create Keyboard instance
-    keyboard = Keyboard(parameter_dict)
+    keyboard = Keyboard(parameters)
 
     # Set parameters on Keyboard object
     # keyboard.set_parameter_dict(parameter_dict)
@@ -221,6 +224,13 @@ def main():
 
     subprocess_dict = {}
 
+    switch_type_for_filename = ''
+    stab_type_for_filename = ''
+
+    if args.switch_type_in_filename == True:
+        switch_type_for_filename = '_' + parameters.switch_type
+        stab_type_for_filename = '_' + parameters.stabilizer_type
+
     if graph == True:
         gv_file_name = graph_folder_path / (layout_name + gv_postfix)
         logger.info('Global: %s', gv_file_name)
@@ -241,8 +251,8 @@ def main():
 
         for part_name in rendered_object_dict[section].keys():
             part_name_formatted = '_' + part_name
-            scad_file_name = scad_folder_path / (layout_name + section_postfix + part_name_formatted + scad_postfix)
-            stl_file_name = stl_folder_path / (layout_name + section_postfix + part_name_formatted + stl_postfix)
+            scad_file_name = scad_folder_path / (layout_name + section_postfix + part_name_formatted + switch_type_for_filename + stab_type_for_filename + scad_postfix)
+            stl_file_name = stl_folder_path / (layout_name + section_postfix + part_name_formatted + switch_type_for_filename + stab_type_for_filename + stl_postfix)
             if rendered_object_dict[section][part_name] is not None:
                 logger.info('Generate scad file with name %s', scad_file_name)
                 # Generate SCAD file from assembly

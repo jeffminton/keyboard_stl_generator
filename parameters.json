@@ -3,19 +3,25 @@
     "y_build_size" : 200,
 
     "kerf" : 0.01,
+
+    "switch_type": "mx_openable",
+    "stabilizer_type": "costar",
+
+    "custom_shape": false, 
+    "custum_shape_points": null,
+    "custom_shape_path": null,
     
     "plate_supports": true,
     "support_bar_height" : 3.0,
-    "support_bar_width" : 1.0,    
+    "support_bar_width" : 3.0,    
 
-
-    "top_margin" : 12,
-    "bottom_margin" : 12,
-    "left_margin" : 12,
-    "right_margin" : 12,
+    "top_margin" : 8,
+    "bottom_margin" : 8,
+    "left_margin" : 8,
+    "right_margin" : 8,
 
     "case_height" : 20,
-    "plate_wall_thickness" : 3.0,
+    "case_wall_thickness" : 3.0,
     "plate_thickness" : 1.311,
     "plate_corner_radius" : 4,
     "bottom_cover_thickness": 2,
@@ -24,7 +30,7 @@
 
     "screw_count": 8,
     "screw_diameter": 4,
-    "screw_edge_inset": 6.5,
+    "screw_edge_inset": 7,
 
     "cable_hole": true,
     "hole_width": 10,

@@ -4,8 +4,68 @@ from solid.utils import *
 import logging
 
 from cell import Cell
+from parameters import Parameters
+from switch_config import SwitchConfig
 
 class Switch(Cell):
+    """
+    Defines a Switch object that inherits from the Cell class
+
+    ...
+
+    Attributes
+    ----------
+    x : float
+        The x coorinate of the top left of the switch in keyboard layout U units
+
+    y : float
+        The y coorinate of the top left of the switch in keyboard layout U units
+
+    w : float
+        The width of the switch in keyboard layout U units
+
+    h : float
+        The height of the switch in keyboard layout U units
+
+    rotation : float, default 0.0
+        The angle the switch will be rotated to
+
+    r_x_offset : float, default 0.0
+        The x offset from origin tha tthe rotation oriin will be moved to
+
+    r_y_offset : float, default 0.0
+        The y offset from origin tha tthe rotation oriin will be moved to
+
+    cell_value : float, default ''
+        The actual text of the key
+
+    switch_type : float, default 'mx_openable'
+        The switch type to create a cutout for
+
+    stabilizer_type : float, default 'cherry_costar'
+        The stabilizer type to create a cutout for
+
+    Methods
+    -------
+    switch_cutout()
+        Get a switch soild that matches the attribute settings
+    update_all_neighbors_set(neighbor_group = 'local')
+        Check if all neighbors are defined where they exist and set the neighbor_check_complete value to match
+    get_all_neighbors_set(neighbor_group = 'local')
+        Get the value of neighbor_check_complete for the passed in neughbor group
+    get_neighbor(neighbor_name, neighbor_group = 'local')
+        Get the neighbor Switch object for the name and group passed in
+    set_neighbor(neighbor = None, neighbor_name = '', offset = 0.0, has_neighbor = True, neighbor_group = 'local', perp_offset = 0.0)
+        Set a neighbor for the switch object
+    has_neighbor(neighbor_name = '', neighbor_group = 'local')
+        Return True if switch has a neigbor with name and group passed in. False if no neighbor
+    get_neighbor_offset(neighbor_name = '', neighbor_group = 'local')
+        Get the x offset to the neighbor for the name and group passed in
+    get_neighbor_perp_offset(neighbor_name = '', neighbor_group = 'local')
+        Get the perpendicular offset to the neighbor for the name and group passed in
+    get_neighbor_direction_list()
+        Helper to get list of neighbor direction names
+    """
 
     NEIGHBOR_OPOSITE_DICT = {
         'right': 'left',
@@ -14,8 +74,10 @@ class Switch(Cell):
         'bottom': 'top'
     }
 
-    def __init__(self, x, y, w, h, rotation = 0.0,  r_x_offset = 0.0, r_y_offset = 0.0, kerf = 0.0, cell_value = ''):
-        super().__init__(x, y, w, h, rotation,  r_x_offset, r_y_offset, kerf, cell_value = cell_value)
+
+
+    def __init__(self, x, y, w, h, rotation = 0.0,  r_x_offset = 0.0, r_y_offset = 0.0, cell_value = '', switch_config = None, parameters = None):
+        super().__init__(x, y, w, h, rotation,  r_x_offset, r_y_offset, cell_value = cell_value)
 
         self.logger = logging.getLogger('Switch')
         self.logger.setLevel(logging.INFO)
@@ -32,6 +94,12 @@ class Switch(Cell):
             ch.setFormatter(formatter)
 
             self.logger.addHandler(ch)
+
+        self.switch_config = switch_config
+        if self.switch_config is None:
+            self.switch_config = SwitchConfig()
+
+        self.parameters: Parameters = parameters
 
         self.solid = self.switch_cutout()
 
@@ -68,8 +136,6 @@ class Switch(Cell):
 
         # self.neighbors
     
-    # def u(self, u_value):
-    #     return u_value * self.SWITCH_SPACING
 
     def neighbors_formatted(self, obj, indent = 2, current_indent = 0):
         current_output = ''
@@ -107,131 +173,63 @@ class Switch(Cell):
         local_neighbors_json = self.neighbors_formatted(self.local_neighbors, indent=4, current_indent=10)
         return 'Switch: ' + super().__str__() + '\nglobal neighbors: \n' + global_neighbors_json + '\local neighbors: \n' + local_neighbors_json
 
+
     def switch_cutout(self):
-        poly_points = [
-            [self.SQUARE_SIZE_HALF - self.kerf, -self.SQUARE_SIZE_HALF + self.kerf], # 0
-            [self.SQUARE_SIZE_HALF - self.kerf, -self.CLIP_NOTCH_Y_MAX + self.kerf], # 1
-            [self.CLIP_NOTCH_X - self.kerf, -self.CLIP_NOTCH_Y_MAX + self.kerf], # 2
-            [self.CLIP_NOTCH_X - self.kerf, -self.CLIP_NOTCH_Y_MIN - self.kerf], # 3
-            [self.SQUARE_SIZE_HALF - self.kerf, -self.CLIP_NOTCH_Y_MIN - self.kerf], # 4
-            [self.SQUARE_SIZE_HALF - self.kerf, self.CLIP_NOTCH_Y_MIN + self.kerf], # 5
-            [self.CLIP_NOTCH_X - self.kerf, self.CLIP_NOTCH_Y_MIN + self.kerf], # 6
-            [self.CLIP_NOTCH_X - self.kerf, self.CLIP_NOTCH_Y_MAX - self.kerf], # 7
-            [self.SQUARE_SIZE_HALF - self.kerf, self.CLIP_NOTCH_Y_MAX - self.kerf], # 8
-            [self.SQUARE_SIZE_HALF - self.kerf, self.SQUARE_SIZE_HALF - self.kerf], # 9
-            [-self.SQUARE_SIZE_HALF + self.kerf, self.SQUARE_SIZE_HALF - self.kerf], # 10
-            [-self.SQUARE_SIZE_HALF + self.kerf, self.CLIP_NOTCH_Y_MAX - self.kerf], # 11
-            [-self.CLIP_NOTCH_X + self.kerf, self.CLIP_NOTCH_Y_MAX - self.kerf], # 12
-            [-self.CLIP_NOTCH_X + self.kerf, self.CLIP_NOTCH_Y_MIN + self.kerf], # 13
-            [-self.SQUARE_SIZE_HALF + self.kerf, self.CLIP_NOTCH_Y_MIN + self.kerf], # 14
-            [-self.SQUARE_SIZE_HALF + self.kerf, -self.CLIP_NOTCH_Y_MIN - self.kerf], # 15
-            [-self.CLIP_NOTCH_X + self.kerf, -self.CLIP_NOTCH_Y_MIN - self.kerf], # 16
-            [-self.CLIP_NOTCH_X + self.kerf, -self.CLIP_NOTCH_Y_MAX + self.kerf], # 17
-            [-self.SQUARE_SIZE_HALF + self.kerf, -self.CLIP_NOTCH_Y_MAX + self.kerf], # 18
-            [-self.SQUARE_SIZE_HALF + self.kerf, -self.SQUARE_SIZE_HALF + self.kerf] # 19
-        ]
+        """
+        Return the polygon that will be used to cutout a place in the plate for a switch
 
-        poly_path = [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]]
+        Returns
+        -------
+        OpenSCADObject
+            The OpenSCADObject for the cutout
+        """
 
-        x_right = self.kerf + self.SQUARE_SIZE_HALF - self.CORNER_CIRCLE_EDGE_OFFSET
-        x_left = self.kerf - self.SQUARE_SIZE_HALF + self.CORNER_CIRCLE_EDGE_OFFSET
-        y_top = self.kerf + self.SQUARE_SIZE_HALF - self.CORNER_CIRCLE_EDGE_OFFSET
-        y_bottom = self.kerf - self.SQUARE_SIZE_HALF + self.CORNER_CIRCLE_EDGE_OFFSET
+        self.logger.debug('switch %s, switch type: %s, stab type: %s', self.cell_value, self.switch_config.switch_type, self.switch_config.stabilizer_type)
+        
+        # switch_poly_points, switch_poly_path = self.switch_config.get_switch_poly_info()
+        # stab_poly_points, stab_poly_path = self.switch_config.get_stab_poly_info(key_width = self.switch_length)
 
-        d = polygon(poly_points, poly_path)
-        d += right(x_right) ( forward(y_top) ( circle(r = .4) ) )
-        d += right(x_right) ( forward(y_bottom) ( circle(r = .4) ) )
-        d += right(x_left) ( forward(y_bottom) ( circle(r = .4) ) )
-        d += right(x_left) ( forward(y_top) ( circle(r = .4) ) )
-        stab = self.stab_cutout()
+        switch_poly_points = self.switch_config.get_switch_poly_info()
+        switch_poly_path = [range(len(switch_poly_points))]
 
-        if stab is not None:
-            d += stab
+        stab_poly_points, support_cutout_poly_points = self.switch_config.get_stab_poly_info(key_width = self.switch_length)
+        stab_poly_path = [range(len(stab_poly_points))]
+        support_cutout_poly_path = [range(len(support_cutout_poly_points))]
+        
+        self.logger.debug('\tswitch_poly_points: %d, switch_poly_path: %d', len(switch_poly_points), len(switch_poly_path))
 
-        cutout = linear_extrude(height = 10, center = True)(d)
+        # Create swtch cutout polygon
+        cutout_polygon = polygon(switch_poly_points, switch_poly_path)
+
+        # Create stab polygon if it is defined
+        if stab_poly_points is not None and stab_poly_path is not None:
+            self.logger.debug('\t\tstab_poly_points: %d, stab_poly_path: %d', len(stab_poly_points), len(stab_poly_path))
+            stab = polygon(stab_poly_points, stab_poly_path) + mirror([1, 0, 0]) ( polygon(stab_poly_points, stab_poly_path) )
+            # stab = polygon(stab_poly_points, stab_poly_path)# + mirror([1, 0, 0]) ( polygon(stab_poly_points, stab_poly_path) )
+            if support_cutout_poly_points is not None:
+                support_cutout = polygon(support_cutout_poly_points, support_cutout_poly_path) + mirror([1, 0, 0]) ( polygon(support_cutout_poly_points, support_cutout_poly_path) )
+            cutout_polygon += stab
+
+        cutout = linear_extrude(height = 10, center = True)(cutout_polygon)
+
+        if support_cutout_poly_points is not None:
+            cutout += down( (10 / 2) + (self.parameters.plate_thickness / 2) ) (
+                linear_extrude(height = 10, center = True)(support_cutout)
+            )
+
+
+        cutout = rotate(a = 180, v = (0, 0, 1)) ( cutout )
 
         # Rotate a key if it is taller than it is wide
         if self.vertical:
-            cutout = rotate(a = 90, v = (0, 0, 1)) ( cutout )
+            
+            cutout = rotate(a = -90, v = (0, 0, 1)) ( cutout )
 
-        # if rotation != 0.0:
-        #     cutout = rotate(a = -(rotation), v = (0, 0, 1)) ( cutout )
-
-        # print('switch_cutout:', 'w / 2:', w / 2, 'h / 2', h / 2)
         offset_cutout = right(self.u(self.w / 2)) ( back(self.u(self.h / 2)) ( cutout ) )
 
-        # return right(self.u(self.x)) ( forward(self.u(self.y)) ( offset_cutout ) )
         return offset_cutout
 
 
-    def get_stab_cutout_spacing(self):
-        key_width = self.w
-        
-        if self.vertical == True:
-            key_width = self.h
-    
-        if key_width >= 2.0 and key_width < 3.0: # 2u, 2.25u, 2.5u, 2.75u
-            return 11.9
-        elif key_width == 3: # 3u
-            return 19.05
-        elif key_width == 4: # 4u
-            return 28.575
-        elif key_width == 4.5: # 4.5u
-            return 34.671
-        elif key_width == 5.5: # 5.5u
-            return 42.8625
-        elif key_width == 6: # 6u
-            return 47.5
-        elif key_width == 6.25: # 6.25u
-            return 50
-        elif key_width == 6.5: # 6.5u
-            return 52.38
-        elif key_width == 7: # 7u
-            return 57.15
-        elif key_width == 8: # 8u
-            return 66.675
-        elif key_width == 9: # 9u
-            return 66.675
-        elif key_width == 10: # 10u
-            return 66.675
-        else:
-            return -1
-
-    def stab_cutout(self):
-
-        s = self.get_stab_cutout_spacing()
-
-        if s != -1:
-            poly_points = [
-                [s - self.MAIN_BODY_SWITCH_SIDE_X_OFFSET + self.kerf, -self.BAR_BOTTOM_Y + self.kerf], # 0
-                [s - self.MAIN_BODY_SWITCH_SIDE_X_OFFSET + self.kerf, -self.MAIN_BODY_BOTTOM_Y + self.kerf], # 1
-                [s - self.COSTAR_NOTCH_SWITCH_SIDE_X_OFFSET + self.kerf, -self.MAIN_BODY_BOTTOM_Y + self.kerf], # 2
-                [s - self.COSTAR_NOTCH_SWITCH_SIDE_X_OFFSET + self.kerf, -self.BOTTOM_NOTCH_BOTTOM_Y + self.kerf], # 3
-                [s + self.COSTAR_NOTCH_SWITCH_SIDE_X_OFFSET - self.kerf, -self.BOTTOM_NOTCH_BOTTOM_Y + self.kerf], # 4
-                [s + self.COSTAR_NOTCH_SWITCH_SIDE_X_OFFSET - self.kerf, -self.MAIN_BODY_BOTTOM_Y + self.kerf], # 5
-                [s + self.MAIN_BODY_SWITCH_SIDE_X_OFFSET - self.kerf, -self.MAIN_BODY_BOTTOM_Y + self.kerf], # 6
-                [s + self.MAIN_BODY_SWITCH_SIDE_X_OFFSET - self.kerf, -self.BAR_BOTTOM_Y + self.kerf], # 7
-                [s + self.SIDE_NOTCH_FAR_SIDE_X_OFFSET - self.kerf, -self.BAR_BOTTOM_Y + self.kerf], # 8
-                [s + self.SIDE_NOTCH_FAR_SIDE_X_OFFSET - self.kerf, self.SIDE_NOTCH_TOP_Y - self.kerf], # 9
-                [s + self.MAIN_BODY_SWITCH_SIDE_X_OFFSET - self.kerf, self.SIDE_NOTCH_TOP_Y - self.kerf], # 10
-                [s + self.MAIN_BODY_SWITCH_SIDE_X_OFFSET - self.kerf, self.MAIN_BODY_TOP_Y - self.kerf], # 11
-                [s + self.COSTAR_NOTCH_SWITCH_SIDE_X_OFFSET - self.kerf, self.MAIN_BODY_TOP_Y - self.kerf], # 12
-                [s + self.COSTAR_NOTCH_SWITCH_SIDE_X_OFFSET - self.kerf, self.TOP_NOTCH_TOP_Y - self.kerf], # 13
-                [s - self.COSTAR_NOTCH_SWITCH_SIDE_X_OFFSET + self.kerf, self.TOP_NOTCH_TOP_Y - self.kerf], # 14
-                [s - self.COSTAR_NOTCH_SWITCH_SIDE_X_OFFSET + self.kerf, self.MAIN_BODY_TOP_Y - self.kerf], # 15
-                [s - self.MAIN_BODY_SWITCH_SIDE_X_OFFSET + self.kerf, self.MAIN_BODY_TOP_Y - self.kerf], # 16
-                [s - self.MAIN_BODY_SWITCH_SIDE_X_OFFSET + self.kerf, self.BAR_BOTTOM_Y - self.kerf], # 17
-                [-s + self.MAIN_BODY_SWITCH_SIDE_X_OFFSET - self.kerf, self.BAR_BOTTOM_Y - self.kerf], # 18
-                [-s + self.MAIN_BODY_SWITCH_SIDE_X_OFFSET - self.kerf, -self.BAR_BOTTOM_Y + self.kerf] #19
-            ]
-
-            poly_path = [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]]
-
-            d = polygon(poly_points, poly_path) + mirror([1, 0, 0]) ( polygon(poly_points, poly_path) )
-
-            return d
-        else:
-            return None
 
     def update_all_neighbors_set(self, neighbor_group = 'local'):
 
@@ -285,17 +283,17 @@ class Switch(Cell):
         elif neighbor_group == 'global':
             self.global_neighbors[neighbor_name] = temp_dict
         
-    def set_right_neighbor(self, neighbor = None, offset = 0.0, has_neighbor = True, neighbor_group = 'local', perp_offset = 0.0):
-        self.set_neighbor(neighbor, 'right', offset, has_neighbor, neighbor_group, perp_offset)
+    # def set_right_neighbor(self, neighbor = None, offset = 0.0, has_neighbor = True, neighbor_group = 'local', perp_offset = 0.0):
+    #     self.set_neighbor(neighbor, 'right', offset, has_neighbor, neighbor_group, perp_offset)
 
-    def set_left_neighbor(self, neighbor = None, offset = 0.0, has_neighbor = True, neighbor_group = 'local', perp_offset = 0.0):
-        self.set_neighbor(neighbor, 'left', offset, has_neighbor, neighbor_group, perp_offset)
+    # def set_left_neighbor(self, neighbor = None, offset = 0.0, has_neighbor = True, neighbor_group = 'local', perp_offset = 0.0):
+    #     self.set_neighbor(neighbor, 'left', offset, has_neighbor, neighbor_group, perp_offset)
 
-    def set_top_neighbor(self, neighbor = None, offset = 0.0, has_neighbor = True, neighbor_group = 'local', perp_offset = 0.0):
-        self.set_neighbor(neighbor, 'top', offset, has_neighbor, neighbor_group, perp_offset)
+    # def set_top_neighbor(self, neighbor = None, offset = 0.0, has_neighbor = True, neighbor_group = 'local', perp_offset = 0.0):
+    #     self.set_neighbor(neighbor, 'top', offset, has_neighbor, neighbor_group, perp_offset)
 
-    def set_bottom_neighbor(self, neighbor = None, offset = 0.0, has_neighbor = True, neighbor_group = 'local', perp_offset = 0.0):
-        self.set_neighbor(neighbor, 'bottom', offset, has_neighbor, neighbor_group, perp_offset)
+    # def set_bottom_neighbor(self, neighbor = None, offset = 0.0, has_neighbor = True, neighbor_group = 'local', perp_offset = 0.0):
+    #     self.set_neighbor(neighbor, 'bottom', offset, has_neighbor, neighbor_group, perp_offset)
 
     def has_neighbor(self, neighbor_name = '', neighbor_group = 'local'):
         if neighbor_group == 'local':

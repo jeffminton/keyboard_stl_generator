@@ -1,18 +1,20 @@
 {
     "plate_only": false,
     "plate_supports": true,
+
+    "stabilizer_type": "costar",
     
     "x_build_size" : 80,
     "y_build_size" : 80,
 
     "kerf" : 0.05,
 
-    "top_margin" : 12,
-    "bottom_margin" : 12,
-    "left_margin" : 12,
-    "right_margin" : 12,
+    "top_margin" : 0,
+    "bottom_margin" : 0,
+    "left_margin" : 0,
+    "right_margin" : 0,
     "case_height" : 10,
-    "plate_wall_thickness" : 3.0,
+    "case_wall_thickness" : 3.0,
     "plate_thickness" : 1.311,
     "plate_corner_radius" : 4,
 
@@ -27,9 +29,9 @@
     "hole_width": 10,
     "hole_height": 5,
 
-    "screw_count": 8,
+    "screw_count": 0,
     "screw_diameter": 4,
-    "screw_edge_inset": 6.5,
+    "screw_edge_inset": 7,
 
     "bottom_cover_thickness": 2,
 

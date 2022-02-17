@@ -13,12 +13,14 @@ from cell import Cell
 from item_collection import ItemCollection
 from rotation_collection import RotationCollection
 from body import Body
+from switch_config import SwitchConfig
+from parameters import Parameters
 
 
 
 class Keyboard():
 
-    def __init__(self, parameter_dict = {}):
+    def __init__(self, parameters: Parameters = Parameters()):
         self.logger = logging.getLogger('Keyboard')
         self.logger.setLevel(logging.INFO)
 
@@ -35,54 +37,28 @@ class Keyboard():
 
             self.logger.addHandler(ch)
 
+        self.parameters = parameters
+        
         self.modifier_include_list = ['x', 'y', 'w', 'h', 'r', 'rx', 'ry', 'd']
 
-        self.parameter_dict = parameter_dict
-
-        self.default_parameter_dict = {
-            'plate_only': True,
-            'plate_supports': True,
-            
-            'x_build_size' : 200,
-            'y_build_size' : 200,
-
-            'kerf' : 0.00,
-
-            'top_margin' : 8,
-            'bottom_margin' : 8,
-            'left_margin' : 8,
-            'right_margin' : 8,
-            'case_height' : 10,
-            'plate_wall_thickness' : 2.0,
-            'plate_thickness' : 1.511,
-            'plate_corner_radius' : 4,
-
-            'support_bar_height' : 3.0,
-            'support_bar_width' : 1.0,
-            'tilt': 0.0,
-
-            'simple_test': False
-        }
-
-        self.kerf = 0.0
+        self.kerf = self.parameters.kerf
 
         self.body = None
 
         self.desired_section_number = -1
 
-        self.cable_hole_up_offset = 1
-        self.cable_hole_down_offset = 1
+        self.cable_hole_up_offset = self.parameters.cable_hole_up_offset
+        self.cable_hole_down_offset = self.parameters.cable_hole_down_offset
 
-        self.cable_hole = False
+        self.cable_hole = self.parameters.cable_hole
 
-        self.build_attr_from_dict(self.default_parameter_dict)
-        
-        if self.parameter_dict is not None:
-            self.build_attr_from_dict(self.parameter_dict)
+        self.switch_type = self.parameters.switch_type
+        self.stabilizer_type = self.parameters.stabilizer_type
 
+        self.switch_config = self.parameters.switch_config
 
-        self.build_x = math.floor(self.x_build_size / Cell.SWITCH_SPACING)
-        self.build_y = math.floor(self.y_build_size / Cell.SWITCH_SPACING)
+        self.build_x = math.floor(parameters.x_build_size / Cell.SWITCH_SPACING)
+        self.build_y = math.floor(parameters.y_build_size / Cell.SWITCH_SPACING)
 
         self.switch_collection = ItemCollection()
         self.support_collection = ItemCollection()
@@ -102,29 +78,6 @@ class Keyboard():
         self.support_section_list = [ItemCollection()]
         self.support_cutout_section_list = [ItemCollection()]
 
-
-
-
-    def build_attr_from_dict(self, parameter_dict):
-        for param in parameter_dict.keys():
-            value = parameter_dict[param]
-            
-            setattr(self, param, value)
-    
-    
-    def set_parameter_dict(self, parameter_dict):
-        self.parameter_dict = parameter_dict
-        self.build_attr_from_dict(self.parameter_dict)
-    
-    
-    def get_param(self, paramaeter_name):
-
-        if self.parameter_dict is not None and paramaeter_name in self.parameter_dict.keys():
-            return self.parameter_dict[paramaeter_name]
-        elif paramaeter_name in self.default_parameter_dict.keys():
-            return self.default_parameter_dict[paramaeter_name]
-        else:
-            raise ValueError('No paramter exists with name %s' % (paramaeter_name))
 
 
     def process_keyboard_layout(self, keyboard_layout_dict):
@@ -182,9 +135,9 @@ class Keyboard():
                         x_offset = x
                         y_offset = -(y)
 
-                        switch = Switch(x_offset, y_offset, w, h, kerf = self.kerf, rotation = rotation, cell_value = col_escaped)
-                        support = Support(x_offset, y_offset,w, h, self.plate_thickness, self.support_bar_height, self.support_bar_width, rotation = rotation)
-                        support_cutout = SupportCutout(x_offset, y_offset,w, h, self.plate_thickness, self.support_bar_height, self.support_bar_width, rotation = rotation)
+                        switch = Switch(x_offset, y_offset, w, h, rotation = rotation, cell_value = col_escaped, switch_config = self.switch_config, parameters = self.parameters)
+                        support = Support(x_offset, y_offset, w, h, self.parameters.plate_thickness, self.parameters.support_bar_height, self.parameters.support_bar_width, rotation = rotation)
+                        support_cutout = SupportCutout(x_offset, y_offset, w, h, self.parameters.plate_thickness, self.parameters.support_bar_height, self.parameters.support_bar_width, rotation = rotation)
 
                         # Create switch cutout and support object without rotation
                         if rotation == 0.0:
@@ -236,7 +189,9 @@ class Keyboard():
         self.switch_support_cutouts += support_cutout_collection.get_moved_union()
 
         (rotated_min_x, rotated_max_x, rotated_max_y, rotated_min_y) = self.switch_rotation_collection.get_real_collection_bounds()
-        self.logger.debug('rotation_bounds: rotated_min_x: %f, rotated_max_x: %f, rotated_max_y: %f, rotated_min_y: %f', rotated_min_x, rotated_max_x, rotated_max_y, rotated_min_y)
+
+        self.logger.debug('rotation_bounds: rotated_min_x: %f, rotated_max_x: %f, rotated_max_y: %f, rotated_min_y: %f', 
+            rotated_min_x, rotated_max_x, rotated_max_y, rotated_min_y)
 
         if rotated_min_x < min_x:
             min_x = rotated_min_x
@@ -254,7 +209,7 @@ class Keyboard():
             self.switch_support_cutouts += self.support_cutout_rotation_collection.get_rotated_moved_union(rotation)
 
         # Init body object
-        self.body = Body(self.parameter_dict)
+        self.body = Body(self.parameters)
 
         # Set body dimensions
         self.body.set_dimensions(max_x, min_y, min_x, max_y)
@@ -262,7 +217,7 @@ class Keyboard():
         # Add case to top_assembly
         top_assembly += self.body.case(plate_only = plate_only)
 
-        if self.get_param('simple_test') == False:
+        if self.parameters.get_param('simple_test') == False:
             # Remove switch suport cutouts
             top_assembly -= self.switch_support_cutouts
 
@@ -271,13 +226,17 @@ class Keyboard():
             top_assembly -= self.switch_cutouts
         
         # Generate screw hole related objects
-        screw_hole_collection, screw_hole_body_collection = self.body.screw_hole_objects(tap = bottom)
+        screw_hole_collection = None
+        screw_hole_body_collection = None
+        screw_hole_body_scaled_collection = None
+        if self.body.screw_count > 0:
+            screw_hole_collection, screw_hole_body_collection, screw_hole_body_scaled_collection = self.body.screw_hole_objects(tap = bottom)
 
-        # Remove screw holes from top top_assembly
-        top_assembly -= screw_hole_collection
+            # Remove screw holes from top top_assembly
+            top_assembly -= screw_hole_collection
 
-        bottom_assembly = screw_hole_body_collection
-        bottom_assembly -= screw_hole_collection
+            bottom_assembly = screw_hole_body_collection
+            bottom_assembly -= screw_hole_collection
 
         body_block = self.body.case(body_block_only = True)
         
@@ -289,25 +248,83 @@ class Keyboard():
             # bottom_assembly -= self.get_bottom_section_remove_block(self.desired_section_number)
         
         # Move top_assembly so that the bottom left sits at 0, 0, 0
-        top_assembly = up(self.body.case_height_base_removed - (self.plate_thickness / 2)) ( forward(Cell.u(abs(min_y)) + self.bottom_margin) ( right(self.left_margin) ( top_assembly ) ) )
-        bottom_assembly = up(self.body.case_height_base_removed - (self.plate_thickness / 2)) ( forward(Cell.u(abs(min_y)) + self.bottom_margin) ( right(self.left_margin) ( bottom_assembly ) ) )
-        screw_hole_collection = up(self.body.case_height_base_removed - (self.plate_thickness / 2)) ( forward(Cell.u(abs(min_y)) + self.bottom_margin) ( right(self.left_margin) ( screw_hole_collection ) ) )
-        body_block = up(self.body.case_height_base_removed - (self.plate_thickness / 2)) ( forward(Cell.u(abs(min_y)) + self.bottom_margin) ( right(self.left_margin) ( body_block ) ) )
+        top_assembly = up(self.body.case_height_base_removed - (self.parameters.plate_thickness / 2)) (
+            forward(Cell.u(abs(min_y)) + self.parameters.bottom_margin) (
+                right(self.parameters.left_margin) (
+                    top_assembly 
+                )
+            )
+        )
+
+        bottom_assembly = up(self.body.case_height_base_removed - (self.parameters.plate_thickness / 2)) (
+            forward(Cell.u(abs(min_y)) + self.parameters.bottom_margin) (
+                right(self.parameters.left_margin) (
+                    bottom_assembly
+                )
+            )
+        )
+        
+        if screw_hole_collection is not None:
+            screw_hole_collection = up(self.body.case_height_base_removed - (self.parameters.plate_thickness / 2)) (
+                forward(Cell.u(abs(min_y)) + self.parameters.bottom_margin) (
+                    right(self.parameters.left_margin) (
+                        screw_hole_collection
+                    )
+                )
+            )
+            screw_hole_body_collection = up(self.body.case_height_base_removed - (self.parameters.plate_thickness / 2)) (
+                forward(Cell.u(abs(min_y)) + self.parameters.bottom_margin) (
+                    right(self.parameters.left_margin) (
+                        screw_hole_body_collection
+                    )
+                )
+            )
+            screw_hole_body_scaled_collection = up(self.body.case_height_base_removed - (self.parameters.plate_thickness / 2)) (
+                forward(Cell.u(abs(min_y)) + self.parameters.bottom_margin) (
+                    right(self.parameters.left_margin) (
+                        screw_hole_body_scaled_collection
+                    )
+                )
+            )
+        
+        body_block = up(self.body.case_height_base_removed - (self.parameters.plate_thickness / 2)) (
+            forward(Cell.u(abs(min_y)) + self.parameters.bottom_margin) (
+                right(self.parameters.left_margin) (
+                    body_block
+                )
+            )
+        )
+
         if self.desired_section_number > -1:
-            bottom_section_inclusion = up(self.body.case_height_base_removed - (self.plate_thickness / 2)) ( forward(Cell.u(abs(min_y)) + self.bottom_margin) ( right(self.left_margin) ( bottom_section_inclusion ) ) )
+            bottom_section_inclusion = up(self.body.case_height_base_removed - (self.parameters.plate_thickness / 2)) (
+                forward(Cell.u(abs(min_y)) + self.parameters.bottom_margin) (
+                    right(self.parameters.left_margin) (
+                        bottom_section_inclusion
+                    )
+                )
+            )
 
         # Create block that will remove material to make case bottom flat
-        bottom_diff_plate = down(self.body.case_height_extra * 2) ( back(self.body.real_max_y / 2) ( left(self.body.real_max_x / 2) ( cube([self.body.real_max_x * 2, self.body.real_max_y * 2, self.body.case_height_extra * 2 ]) ) ) )
+        bottom_diff_plate = down(self.body.case_height_extra * 2) (
+            back(self.body.real_max_y / 2) (
+                left(self.body.real_max_x / 2) (
+                    cube([self.body.real_max_x * 2, self.body.real_max_y * 2, self.body.case_height_extra * 2 ])
+                )
+            )
+        )
 
         # Remove space for a cable to pass through the body
         top_assembly -= self.get_cable_hole()
 
         # Tile the body if desired
-        if self.tilt > 0.0:
-            top_assembly = rotate(self.tilt, [1, 0, 0]) ( top_assembly )
-            bottom_assembly = rotate(self.tilt, [1, 0, 0]) ( bottom_assembly )
-            screw_hole_collection = rotate(self.tilt, [1, 0, 0]) ( screw_hole_collection )
-            body_block = rotate(self.tilt, [1, 0, 0]) ( body_block )
+        if self.parameters.tilt > 0.0:
+            top_assembly = rotate(self.parameters.tilt, [1, 0, 0]) ( top_assembly )
+            bottom_assembly = rotate(self.parameters.tilt, [1, 0, 0]) ( bottom_assembly )
+            if screw_hole_collection is not None:
+                screw_hole_collection = rotate(self.parameters.tilt, [1, 0, 0]) ( screw_hole_collection )
+                screw_hole_body_collection = rotate(self.parameters.tilt, [1, 0, 0]) ( screw_hole_body_collection )
+                screw_hole_body_scaled_collection = rotate(self.parameters.tilt, [1, 0, 0]) ( screw_hole_body_scaled_collection )
+            body_block = rotate(self.parameters.tilt, [1, 0, 0]) ( body_block )
 
         # Remove bottom block to make bottom of case flat
         top_assembly -= bottom_diff_plate
@@ -321,7 +338,8 @@ class Keyboard():
         if self.desired_section_number > -1:
             bottom_assembly *= bottom_section_inclusion
 
-        bottom_assembly -= screw_hole_collection
+        if screw_hole_collection is not None:
+            bottom_assembly -= screw_hole_collection
 
         # # TEST ####
         # # Union together all rotated supports
@@ -349,7 +367,10 @@ class Keyboard():
 
 
         if top == True or plate_only == True:
-            return top_assembly
+            if screw_hole_body_scaled_collection is not None:
+                return top_assembly - screw_hole_body_scaled_collection
+            else:
+                return top_assembly
         elif bottom == True:
             return bottom_assembly 
         else:
@@ -360,10 +381,10 @@ class Keyboard():
     def get_cable_hole(self):
 
         if self.cable_hole == True:
-            return up(self.body.case_height_base_removed - (self.hole_height / 2) - self.body.plate_thickness - self.cable_hole_down_offset ) (
-                right(self.left_margin + (self.body.real_max_x / 2)) ( 
-                    forward(self.bottom_margin + self.top_margin + self.body.real_max_y) ( 
-                        cube([self.hole_width, self.plate_wall_thickness * 2, self.hole_height], center = True) 
+            return up(self.body.case_height_base_removed - (self.parameters.hole_height / 2) - self.body.plate_thickness - self.cable_hole_down_offset ) (
+                right(self.parameters.left_margin + (self.body.real_max_x / 2)) ( 
+                    forward(self.parameters.bottom_margin + self.parameters.top_margin + self.body.real_max_y) ( 
+                        cube([self.parameters.hole_width, self.parameters.case_wall_thickness * 2, self.parameters.hole_height], center = True) 
                     ) 
                 ) 
             )
@@ -392,7 +413,7 @@ class Keyboard():
         next_x_section = 0
         next_y_section = 0
         
-        # build_area = left(self.left_margin) ( back(self.y_build_size - self.top_margin) ( down(10) ( cube([self.x_build_size, self.y_build_size, 10]) ) ) )
+        # build_area = left(self.parameters.left_margin) ( back(self.y_build_size - self.parameters.top_margin) ( down(10) ( cube([self.parameters.x_build_size, self.y_build_size, 10]) ) ) )
 
         switch_object_dict = self.switch_collection.get_collection_dict()
         for x in self.switch_collection.get_sorted_x_list():
@@ -406,19 +427,17 @@ class Keyboard():
                 h = current_switch.h
                 cell_value = current_switch.cell_value
                 
-                switch_x_max = Cell.u(x + w) + self.left_margin
-                switch_x_min = Cell.u(x) + self.left_margin
-                switch_y_max = Cell.u(abs(y) + h) + self.top_margin
-                switch_y_min = Cell.u(abs(y)) + self.top_margin
+                switch_x_max = Cell.u(x + w) + self.parameters.left_margin
+                switch_x_min = Cell.u(x) + self.parameters.left_margin
+                switch_y_max = Cell.u(abs(y) + h) + self.parameters.top_margin
+                switch_y_min = Cell.u(abs(y)) + self.parameters.top_margin
 
-                new_switch = Switch(x, y, w, h, cell_value = cell_value)
-
-                if switch_x_max - current_x_start < self.x_build_size:
+                if switch_x_max - current_x_start < self.parameters.x_build_size:
                     # self.logger.debug('current_x_section:', current_x_section)
                     self.switch_section_list[current_x_section].add_item(x, y, current_switch)
                     self.support_section_list[current_x_section].add_item(x, y, current_support)
                     self.support_cutout_section_list[current_x_section].add_item(x, y, current_support_cutout)
-                elif switch_x_max - current_x_start > self.x_build_size and next_x_section > current_x_section:
+                elif switch_x_max - current_x_start > self.parameters.x_build_size and next_x_section > current_x_section:
                     self.switch_section_list[next_x_section].add_item(x, y, current_switch)
                     self.support_section_list[next_x_section].add_item(x, y, current_support)
                     self.support_cutout_section_list[next_x_section].add_item(x, y, current_support_cutout)
@@ -506,15 +525,15 @@ class Keyboard():
                         # If switch has no global top neighbor include the board edge in this separator bar
                         if item.has_neighbor('top', 'global') == False:
                             self.logger.debug('%s, Global Top Bar False', str(item))
-                            bar_height += Cell.u(abs(item.y)) + self.top_margin
+                            bar_height += Cell.u(abs(item.y)) + self.parameters.top_margin
                             self.logger.debug('\t bar_height: %f', bar_height)
 
                         # If switch has no global bottom neighbor include the board edge in this separator bar
                         if item.has_neighbor('bottom', 'global') == False:
                             self.logger.debug('%s, Global Bottom Bar False', str(item))
-                            bar_height += Cell.u( abs(self.body.min_y) - (abs(item.y) + item.h) ) + self.bottom_margin
+                            bar_height += Cell.u( abs(self.body.min_y) - (abs(item.y) + item.h) ) + self.parameters.bottom_margin
                             self.logger.debug('\t bar_height: %f', bar_height)
-                            y_offset -= (self.bottom_margin + Cell.u( abs(self.body.min_y) - (abs(item.y) + item.h) ) )
+                            y_offset -= (self.parameters.bottom_margin + Cell.u( abs(self.body.min_y) - (abs(item.y) + item.h) ) )
 
                             if item.has_neighbor('right') == True:
                                 perp_offset = item.get_neighbor_perp_offset('right')

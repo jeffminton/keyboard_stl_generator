@@ -9,31 +9,31 @@ import json
 class Cell:
     # Switch Dimensions
     SWITCH_SPACING = 19.05
-    SQUARE_SIZE = 14
-    SQUARE_SIZE_HALF = SQUARE_SIZE / 2
-    # NOTCH_HEIGHT = 3.5
-    NOTCH_WIDTH = 0.8
-    CLIP_NOTCH_X = SQUARE_SIZE_HALF + NOTCH_WIDTH
-    CLIP_NOTCH_Y_MAX = 6
-    CLIP_NOTCH_Y_MIN = 2.9
-    NOTCH_VERT_SPACING = 5
-    NOTCH_VERT_SPACING_HALF = NOTCH_VERT_SPACING / 2
-    NOTCH_EDGE_OFFSET = 1
-    CORNER_CIRCLE_EDGE_OFFSET = 0.0
+    # SQUARE_SIZE = 14
+    # SQUARE_SIZE_HALF = SQUARE_SIZE / 2
+    # # NOTCH_HEIGHT = 3.5
+    # NOTCH_WIDTH = 0.8
+    # CLIP_NOTCH_X = SQUARE_SIZE_HALF + NOTCH_WIDTH
+    # CLIP_NOTCH_Y_MAX = 6
+    # CLIP_NOTCH_Y_MIN = 2.9
+    # NOTCH_VERT_SPACING = 5
+    # NOTCH_VERT_SPACING_HALF = NOTCH_VERT_SPACING / 2
+    # NOTCH_EDGE_OFFSET = 1
+    # CORNER_CIRCLE_EDGE_OFFSET = 0.0
 
 
-    # #[Stab Dimensions]
-    BAR_BOTTOM_Y = 2.3
-    MAIN_BODY_BOTTOM_Y = 5.53
-    BOTTOM_NOTCH_BOTTOM_Y = 6.45
-    SIDE_NOTCH_TOP_Y = 0.5
-    MAIN_BODY_TOP_Y = 6.77
-    TOP_NOTCH_TOP_Y = 7.75
-    MAIN_BODY_SWITCH_SIDE_X_OFFSET = 3.375
-    COSTAR_NOTCH_SWITCH_SIDE_X_OFFSET = 1.65
-    SIDE_NOTCH_FAR_SIDE_X_OFFSET = 4.2
+    # # #[Stab Dimensions]
+    # BAR_BOTTOM_Y = 2.3
+    # MAIN_BODY_BOTTOM_Y = 5.53
+    # BOTTOM_NOTCH_BOTTOM_Y = 6.45
+    # SIDE_NOTCH_TOP_Y = 0.5
+    # MAIN_BODY_TOP_Y = 6.77
+    # TOP_NOTCH_TOP_Y = 7.75
+    # MAIN_BODY_SWITCH_SIDE_X_OFFSET = 3.375
+    # COSTAR_NOTCH_SWITCH_SIDE_X_OFFSET = 1.65
+    # SIDE_NOTCH_FAR_SIDE_X_OFFSET = 4.2
 
-    def __init__(self, x: float, y: float, w: float, h: float, rotation = 0.0,  r_x_offset = 0.0, r_y_offset = 0.0, kerf = 0.0, cell_value = ''):
+    def __init__(self, x: float, y: float, w: float, h: float, rotation = 0.0,  r_x_offset = 0.0, r_y_offset = 0.0, cell_value = ''):
         
         self.logger = logging.getLogger('Cell')
         self.logger.setLevel(logging.INFO)
@@ -100,8 +100,6 @@ class Cell:
 
         if self.h > self.w:
             self.vertical = True
-
-        self.kerf = kerf
         
         self.cell_value = cell_value
 

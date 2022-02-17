@@ -1,3 +1,4 @@
+from ast import Param
 import math
 
 from solid import *
@@ -7,11 +8,12 @@ import logging
 
 from cell import Cell
 from support import Support
+from parameters import Parameters
 
 
 class Body():
 
-    def __init__(self, parameter_dict = {}):
+    def __init__(self, parameters: Parameters = Parameters()):
 
         self.logger = logging.getLogger('Body')
         self.logger.setLevel(logging.INFO)
@@ -29,30 +31,31 @@ class Body():
 
             self.logger.addHandler(ch)
 
-        self.x_build_size = 200.0
-        self.y_build_size = 200.0
+        self.parameters = parameters
 
-        self.top_margin = 8.0
-        self.bottom_margin = 8.0
-        self.left_margin = 8.0
-        self.right_margin = 8.0
-        self.case_height = 10
-        self.case_wall_thickness = 2.0
-        self.plate_thickness = 1.511
-        self.plate_corner_radius = 4
-        self.plate_only = False
-        self.plate_supports = False
-        self.support_bar_height = 3.0
-        self.support_bar_width = 1.0
+        self.x_build_size = self.parameters.x_build_size
+        self.y_build_size = self.parameters.y_build_size
 
-        self.create_screw_holes = False
-        self.screw_count = 4
-        self.screw_diameter = 4
-        self.screw_edge_inset = 8
+        self.top_margin = self.parameters.top_margin
+        self.bottom_margin = self.parameters.bottom_margin
+        self.left_margin = self.parameters.left_margin
+        self.right_margin = self.parameters.right_margin
+        self.case_height = self.parameters.case_height
+        self.case_wall_thickness = self.parameters.case_wall_thickness
+        self.plate_thickness = self.parameters.plate_thickness
+        self.plate_corner_radius = self.parameters.plate_corner_radius
+        self.plate_supports = self.parameters.plate_supports
+        self.support_bar_height = self.parameters.support_bar_height
+        self.support_bar_width = self.parameters.support_bar_width
+
+        # self.create_screw_holes = False
+        self.screw_count = self.parameters.screw_count
+        self.screw_diameter = self.parameters.screw_diameter
+        self.screw_edge_inset = self.parameters.screw_edge_inset
         self.screw_hole_body_wall_width = 2
         self.screw_hole_body_support_x_factor = 4
 
-        self.bottom_cover_thickness = 2.0
+        self.bottom_cover_thickness = self.parameters.bottom_cover_thickness
 
         self.case_height_extra = 30
 
@@ -66,10 +69,10 @@ class Body():
         self.real_case_width = 0.0
         self.real_case_height = 0.0
 
-        self.parameter_dict = parameter_dict
+        # self.parameter_dict = parameter_dict
 
-        if self.parameter_dict is not None:
-            self.build_attr_from_dict(self.parameter_dict)
+        # if self.parameter_dict is not None:
+        #     self.build_attr_from_dict(self.parameter_dict)
 
         self.screw_hole_coordinates = []
 
@@ -77,6 +80,55 @@ class Body():
 
         # Calculated attributes
         self.update_calculated_attributes()
+
+        # self.x_build_size = 200.0
+        # self.y_build_size = 200.0
+
+        # self.top_margin = 8.0
+        # self.bottom_margin = 8.0
+        # self.left_margin = 8.0
+        # self.right_margin = 8.0
+        # self.case_height = 10
+        # self.case_wall_thickness = 2.0
+        # self.plate_thickness = 1.511
+        # self.plate_corner_radius = 4
+        # self.plate_only = False
+        # self.plate_supports = False
+        # self.support_bar_height = 3.0
+        # self.support_bar_width = 1.0
+
+        # self.create_screw_holes = False
+        # self.screw_count = 4
+        # self.screw_diameter = 4
+        # self.screw_edge_inset = 8
+        # self.screw_hole_body_wall_width = 2
+        # self.screw_hole_body_support_x_factor = 4
+
+        # self.bottom_cover_thickness = 2.0
+
+        # self.case_height_extra = 30
+
+        # self.min_x = 0.0
+        # self.max_x = 0.0
+        # self.min_y = 0.0
+        # self.max_y = 0.0
+
+        # self.real_max_x = 0.0
+        # self.real_max_y = 0.0
+        # self.real_case_width = 0.0
+        # self.real_case_height = 0.0
+
+        # self.parameter_dict = parameter_dict
+
+        # if self.parameter_dict is not None:
+        #     self.build_attr_from_dict(self.parameter_dict)
+
+        # self.screw_hole_coordinates = []
+
+        # self.screw_hole_info = {}
+
+        # # Calculated attributes
+        # self.update_calculated_attributes()
 
     
     def update_calculated_attributes(self):
@@ -431,7 +483,7 @@ class Body():
                     }
                 }
         else:
-            raise ValueError('Screw Edge Inset %f must be greater than case_wall_thickness + screw_hole_body_radius: %f' % (self.screw_edge_inset, self.case_wall_thickness + self.screw_hole_body_radius))
+            raise ValueError('Screw Edge Inset %f must be greater than case_wall_thickness: %f + screw_hole_body_radius: %f = %f\n' % (self.screw_edge_inset, self.case_wall_thickness, self.screw_hole_body_radius, self.case_wall_thickness + self.screw_hole_body_radius))
 
 
     def screw_hole_objects(self, tap = False):
@@ -441,6 +493,7 @@ class Body():
 
         screw_hole_collection = union()
         screw_hole_body_collection = union()
+        screw_hole_body_scaled_collection = union()
         corner_count = 4
         remaining_screws = 0
 
@@ -504,8 +557,24 @@ class Body():
                 right_support = True
                 left_support = True
 
-            hole_body = right(x) ( forward(y) ( self.screw_hole_body(right_support = right_support, left_support = left_support, forward_support = forward_support, back_support = back_support, screw_name = coord_string) ) )
+            hole_body = self.screw_hole_body(right_support = right_support, left_support = left_support, forward_support = forward_support, back_support = back_support, screw_name = coord_string)
+            scaled_hole_body = scale([1.0, 1.0, 1.0]) (hole_body)
+
+            hole_body = right(x) (
+                forward(y) (
+                    hole_body
+                )
+            )
+
+            scaled_hole_body = right(x) (
+                forward(y) (
+                    scaled_hole_body
+                )
+            )
+
+
             screw_hole_body_collection += hole_body
+            screw_hole_body_scaled_collection += scaled_hole_body
 
         x_offset = (-self.left_margin) + self.screw_edge_inset
 
@@ -514,14 +583,29 @@ class Body():
 
         # self.logger.info('-self.left_margin: %f, self.screw_edge_inset: %f, x_offset: %f', -self.left_margin, self.screw_edge_inset, x_offset)
 
-        screw_hole_collection = right(x_offset) ( screw_hole_collection )
-        screw_hole_collection = back(y_offset) ( screw_hole_collection )
+        screw_hole_collection = right(x_offset) ( 
+            back(y_offset) (
+                screw_hole_collection
+            )
+        )
 
-        screw_hole_body_collection = right(x_offset) ( screw_hole_body_collection )
-        screw_hole_body_collection = back(y_offset) ( screw_hole_body_collection )
-        screw_hole_body_collection = down(self.case_height_extra_fill + (self.plate_thickness / 2)) ( screw_hole_body_collection )
+        screw_hole_body_collection = right(x_offset) (
+            back(y_offset) (
+                down(self.case_height_extra_fill + (self.plate_thickness / 2)) (
+                    screw_hole_body_collection
+                )
+            )
+        )
 
-        return screw_hole_collection, screw_hole_body_collection
+        screw_hole_body_scaled_collection = right(x_offset) (
+            back(y_offset) (
+                down(self.case_height_extra_fill + (self.plate_thickness / 2)) (
+                    screw_hole_body_scaled_collection
+                )
+            )
+        )
+
+        return screw_hole_collection, screw_hole_body_collection, screw_hole_body_scaled_collection
         
     
 
