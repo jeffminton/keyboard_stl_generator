@@ -39,11 +39,11 @@ class Switch(Cell):
     cell_value : float, default ''
         The actual text of the key
 
-    switch_type : float, default 'mx_openable'
-        The switch type to create a cutout for
+    switch_config : SwitchConfig, default None
+        config opbject for switch
 
-    stabilizer_type : float, default 'cherry_costar'
-        The stabilizer type to create a cutout for
+    parameters : Parameters, default None
+        object containing parameter settings
 
     Methods
     -------
@@ -73,7 +73,6 @@ class Switch(Cell):
         'top': 'bottom',
         'bottom': 'top'
     }
-
 
 
     def __init__(self, x, y, w, h, rotation = 0.0,  r_x_offset = 0.0, r_y_offset = 0.0, cell_value = '', switch_config = None, parameters = None):
