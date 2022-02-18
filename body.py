@@ -388,14 +388,14 @@ class Body():
 
     def generate_screw_holes_coordinates(self):
 
-        screw_hole_collection = union()
-        corner_count = 4
-        remaining_screws = 0
+        # screw_hole_collection = union()
+        # corner_count = 4
+        # remaining_screws = 0
 
         # screw_radius = self.screw_diameter / 2
 
-        screw_set_min_x = 0
-        screw_set_min_y = 0
+        # screw_set_min_x = 0
+        # screw_set_min_y = 0
 
         self.logger.debug('self.real_case_width: %f, self.screw_edge_inset: %f, self.screw_diameter: %f', self.real_case_width, self.screw_edge_inset, self.screw_diameter)
         self.logger.debug('self.real_case_width - ((self.screw_edge_inset * 2) + self.screw_diameter): %f', self.real_case_width - ((self.screw_edge_inset * 2) + self.screw_diameter))
@@ -474,8 +474,8 @@ class Body():
         screw_hole_collection = union()
         screw_hole_body_collection = union()
         screw_hole_body_scaled_collection = union()
-        corner_count = 4
-        remaining_screws = 0
+        # corner_count = 4
+        # remaining_screws = 0
         
         for coord_string in self.screw_hole_info.keys():
             coord = self.screw_hole_info[coord_string]['coordinates']

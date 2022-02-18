@@ -172,11 +172,6 @@ class ItemCollection:
     
     
     def set_item_neighbor(self, item: Switch, neighbor_group = 'local', tabs = ''):
-        # for rx in self.get_rx_list():
-        #     for ry in self.get_ry_list_in_rx(rx):
-        #         for x in self.get_x_list_in_rx_ry(rx, ry):
-        #             for y in self.get_y_list_in_rx_ry_x(x, rx, ry):
-        # current_switch = self.get_item(x, y, rx, ry)
         self.logger.debug('%sSet neighbors for switch %s', tabs, str(item))
         
         x_min = item.x

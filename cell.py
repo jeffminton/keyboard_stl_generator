@@ -119,8 +119,6 @@ class Cell:
         return self.solid
 
     def get_moved(self):
-        # if self.rotaton > 0.0:
-        #     self.logger.info('key: %s, rotation info: %s', str(self), json.dumps(self.rotation_info, indent = 4))
         return right(self.u(self.x)) ( forward(self.u(self.y)) ( self.solid ) )
 
     def get_start_x(self) -> float: 
@@ -202,15 +200,11 @@ class Cell:
                 angle = 90
             else:
                 angle = -90
-            # if self.cell_value in ('CC', 'DD', 'HH', 'II', 'JJ', 'LL'):
-            #     self.logger.info('get start hyp angle: %f, oposite: %f, adjacent: %f', angle, opposite, adjacent)
-            # self.logger.info('%s: self.rotation: %f, angle: %f, opposite: %f, adjacent: %f', str(self), self.rotaton, angle, opposite, adjacent)
+            
             return angle
 
         angle = math.atan( tan )
         angle = math.degrees(angle)
-        # if self.cell_value in ('CC', 'DD', 'HH', 'II', 'JJ', 'LL'):
-        #     self.logger.info('get start hyp angle: %f, oposite: %f, adjacent: %f', angle, opposite, adjacent)
         return angle
 
     def get_opposite(self, angle, hypotenuse):
@@ -218,11 +212,6 @@ class Cell:
         opposite = sin_angle * hypotenuse
         if self.rotaton < 0.0:
             opposite = -(opposite)
-        # if self.cell_value in ('CC', 'DD', 'HH', 'II', 'JJ', 'LL') and opposite > 0:
-        #     self.logger.info('get_opposite: angle: %s', angle)
-        #     self.logger.info('get_opposite: hypotenuse: %s', hypotenuse)
-        #     self.logger.info('get_opposite: sin_angle: %s', sin_angle)
-        #     self.logger.info('get_opposite: opposite: %s', opposite)
         
         return opposite
 
@@ -231,11 +220,6 @@ class Cell:
         adjacent = cos_angle * hypotenuse
         if self.rotaton < 0.0:
             adjacent = -(adjacent)
-        # if self.cell_value in ('CC', 'DD', 'HH', 'II', 'JJ', 'LL'):
-        #     self.logger.info('get_adjacent: angle: %s', angle)
-        #     self.logger.info('get_adjacent: hypotenuse: %s', hypotenuse)
-        #     self.logger.info('get_adjacent: cos_angle: %s', cos_angle)
-        #     self.logger.info('get_adjacent: adjacent: %s', adjacent)
         
         return adjacent
 
@@ -243,19 +227,12 @@ class Cell:
     def get_rotation_info_points(self):
         points_orig = []
         points = []
-        # path = []
-        # self.logger.info('key: %s, rotation info: %s', str(self), json.dumps(self.rotation_info, indent = 4))
-
-        # self.rotation_info = sorted(self.rotation_info, key=lambda x: x['order'])
-
+        
         for corner_name in self.corner_order:
             # self.logger.info(corner_name)
             points_orig.append([self.rotation_info[corner_name]['rotated_x'], self.rotation_info[corner_name]['rotated_y']])
             points.append([Cell.u(self.rotation_info[corner_name]['rotated_x']), Cell.u(self.rotation_info[corner_name]['rotated_y'])])
-            # path.append(self.rotation_info[corner_name]['order'])
-        
-        # self.logger.info('switch %s, points_orig: %s', str(self), str(points_orig))
-        # self.logger.info('switch %s, points: %s', str(self), str(points))
+            
         return points
     
     
@@ -279,9 +256,6 @@ class Cell:
             elif corner_name == 'bottom_right':
                 adjacent = self.x_max
                 opposite = self.y_min
-
-            # if self.cell_value in ('CC', 'DD', 'HH', 'II', 'JJ', 'LL'):
-            # self.logger.info('corner_name %s', str(corner_name))
 
             hypotenuse = self.hypotenuse(adjacent, opposite)
             hypotenuse_start_angle = self.get_hypotenuse_start_angle(adjacent, opposite)

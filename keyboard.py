@@ -85,8 +85,8 @@ class Keyboard():
         rotation = 0.0
         rx = 0.0
         ry = 0.0
-        r_x_offset = 0.0
-        r_y_offset = 0.0
+        # r_x_offset = 0.0
+        # r_y_offset = 0.0
         
         for row in keyboard_layout_dict:
             x = 0.0
@@ -407,11 +407,11 @@ class Keyboard():
 
         # Union all standard switch cutouts together
         current_x_start = 0.0
-        current_y_start = 0.0
+        # current_y_start = 0.0
         current_x_section = 0
-        current_y_section = 0
+        # current_y_section = 0
         next_x_section = 0
-        next_y_section = 0
+        # next_y_section = 0
         
         # build_area = left(self.parameters.left_margin) ( back(self.y_build_size - self.parameters.top_margin) ( down(10) ( cube([self.parameters.x_build_size, self.y_build_size, 10]) ) ) )
 
@@ -428,9 +428,9 @@ class Keyboard():
                 cell_value = current_switch.cell_value
                 
                 switch_x_max = Cell.u(x + w) + self.parameters.left_margin
-                switch_x_min = Cell.u(x) + self.parameters.left_margin
-                switch_y_max = Cell.u(abs(y) + h) + self.parameters.top_margin
-                switch_y_min = Cell.u(abs(y)) + self.parameters.top_margin
+                # switch_x_min = Cell.u(x) + self.parameters.left_margin
+                # switch_y_max = Cell.u(abs(y) + h) + self.parameters.top_margin
+                # switch_y_min = Cell.u(abs(y)) + self.parameters.top_margin
 
                 if switch_x_max - current_x_start < self.parameters.x_build_size:
                     # self.logger.debug('current_x_section:', current_x_section)
@@ -473,14 +473,14 @@ class Keyboard():
 
         (min_x, max_x, max_y, min_y) = section.get_collection_bounds()
 
-        (case_min_x, case_max_x, case_max_y, case_min_y) = section.get_collection_bounds()
+        # (case_min_x, case_max_x, case_max_y, case_min_y) = section.get_collection_bounds()
 
         self.logger.debug('Section Bounds: min_x: %f, max_x: %f, max_y: %f, min_y: %f', min_x, max_x, max_y, min_y)
 
         include_right_border = False
         include_left_border = False
-        include_top_border = False
-        include_bottom_border = False
+        # include_top_border = False
+        # include_bottom_border = False
 
         if max_x == self.body.max_x:
             include_right_border = True
@@ -488,13 +488,13 @@ class Keyboard():
         if min_x == self.body.min_x:
             include_left_border = True
         
-        if max_y == self.body.max_y:
-            include_top_border = True
+        # if max_y == self.body.max_y:
+        #     include_top_border = True
         
-        if min_y == self.body.min_y:
-            include_bottom_border = True
-            if abs(min_y) < self.build_y:
-                include_top_border = True
+        # if min_y == self.body.min_y:
+        #     include_bottom_border = True
+        #     if abs(min_y) < self.build_y:
+        #         include_top_border = True
 
         remove_block = union()
 
@@ -616,7 +616,7 @@ class Keyboard():
 
     
     def get_bottom_section_remove_block(self, section_number):
-        section = self.switch_section_list[section_number]
+        # section = self.switch_section_list[section_number]
 
         self.logger.debug('Get Section %d', section_number)
 
@@ -653,7 +653,7 @@ class Keyboard():
             screw_hole_info = self.body.screw_hole_info[coord_string]
 
             screw_x = screw_hole_info['x']
-            screw_y = screw_hole_info['y']
+            # screw_y = screw_hole_info['y']
 
             # self.logger.info('coord_string: %s, screw_x: %f, screw_y: %f', coord_string, screw_x, screw_y)
 

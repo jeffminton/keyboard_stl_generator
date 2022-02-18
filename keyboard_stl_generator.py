@@ -110,9 +110,6 @@ def main():
     stl_postfix  = '.stl'
     gv_postfix  = '.gv'
 
-    # scad_output_file_name = layout_name + scad_postfix
-    # stl_output_file_name = layout_name + stl_postfix
-
     section_postfix = ''
     if args.section > -1:
         section_postfix = '_section_%d' % (args.section)
@@ -166,18 +163,16 @@ def main():
             logger.error('Failed to parse json after attempt at correction.')
             raise
 
+    # Set parameters from imput file
     parameters = Parameters(parameter_dict)
     
     # Create Keyboard instance
     keyboard = Keyboard(parameters)
 
-    # Set parameters on Keyboard object
-    # keyboard.set_parameter_dict(parameter_dict)
-
     if args.section > -1:
         keyboard.set_section(args.section)
 
-    # Process the keyboar layout object
+    # Process the keyboard layout object
     keyboard.process_keyboard_layout(keyboard_layout_dict)
 
     logger.info('kerf: %f', keyboard.kerf)
