@@ -120,7 +120,7 @@ def main():
     scad_file_name = scad_folder_path / (layout_name + section_postfix + scad_postfix)
     stl_file_name = stl_folder_path / (layout_name + section_postfix + stl_postfix)
 
-    logger.info('Read layout from file %s', input_file_path)
+    logger.debug('Read layout from file %s', input_file_path)
 
     # Set fragments per circle
     FRAGMENTS = args.fragments
@@ -161,7 +161,7 @@ def main():
 
         try:
             parameter_dict = json.loads(parameter_file_text)
-            logger.warning('Valid Json Parsed')
+            logger.debug('Valid Json Parsed')
         except:
             logger.error('Failed to parse json after attempt at correction.')
             raise
