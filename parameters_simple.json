@@ -4,8 +4,8 @@
 
     "kerf" : 0.01,
 
-    "switch_type": "mx",
-    "stabilizer_type": "cherry",
+    "switch_type": "mx_openable",
+    "stabilizer_type": "costar",
 
     "custom_shape": false, 
     "custum_shape_points": null,
@@ -22,7 +22,7 @@
 
     "case_height" : 20,
     "case_wall_thickness" : 3.0,
-    "plate_thickness" : 1.311,
+    "plate_thickness" : 1.111,
     "plate_corner_radius" : 4,
     "bottom_cover_thickness": 2,
 
