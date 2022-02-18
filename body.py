@@ -392,99 +392,79 @@ class Body():
         corner_count = 4
         remaining_screws = 0
 
-        invalid_screw_count = False
-        try:
-            if self.screw_count >= 4:
-                if self.screw_count % 2 != 0:
-                    invalid_screw_count = True
-                    raise ValueError('Screw count must be even')
-            else:
-                invalid_screw_count = True
-                raise ValueError('Screw count must be at least 4')
-        except:
-            if invalid_screw_count == True:
-                raise
-            else:
-                self.logger.info('No screw holes defined')
-                return None
-
         # screw_radius = self.screw_diameter / 2
 
+        screw_set_min_x = 0
+        screw_set_min_y = 0
 
-        if self.screw_edge_inset >= self.case_wall_thickness + self.screw_hole_body_radius:
-            screw_set_min_x = 0
-            screw_set_min_y = 0
+        self.logger.debug('self.real_case_width: %f, self.screw_edge_inset: %f, self.screw_diameter: %f', self.real_case_width, self.screw_edge_inset, self.screw_diameter)
+        self.logger.debug('self.real_case_width - ((self.screw_edge_inset * 2) + self.screw_diameter): %f', self.real_case_width - ((self.screw_edge_inset * 2) + self.screw_diameter))
 
-            self.logger.debug('self.real_case_width: %f, self.screw_edge_inset: %f, self.screw_diameter: %f', self.real_case_width, self.screw_edge_inset, self.screw_diameter)
-            self.logger.debug('self.real_case_width - ((self.screw_edge_inset * 2) + self.screw_diameter): %f', self.real_case_width - ((self.screw_edge_inset * 2) + self.screw_diameter))
+        x_screw_count = 0
+        y_screw_count = 0
 
-            x_screw_count = 0
-            y_screw_count = 0
+        # Bottom Left
+        self.screw_hole_coordinates.append([0, 0])
+        # Top Left
+        self.screw_hole_coordinates.append([0, self.y_screw_width])
+        # Top Right
+        self.screw_hole_coordinates.append([self.x_screw_width, self.y_screw_width])
+        # Bottom Right
+        self.screw_hole_coordinates.append([self.x_screw_width, 0])
 
-            # Bottom Left
-            self.screw_hole_coordinates.append([0, 0])
-            # Top Left
-            self.screw_hole_coordinates.append([0, self.y_screw_width])
-            # Top Right
-            self.screw_hole_coordinates.append([self.x_screw_width, self.y_screw_width])
-            # Bottom Right
-            self.screw_hole_coordinates.append([self.x_screw_width, 0])
+        remaining_screw_count = int((self.screw_count - 4) / 2)
 
-            remaining_screw_count = int((self.screw_count - 4) / 2)
+        # self.logger.info('remaining_screw_count: %f', type(remaining_screw_count))
 
-            # self.logger.info('remaining_screw_count: %f', type(remaining_screw_count))
+        x_per_screw_spacing = 0
+        y_per_screw_spacing = 0
 
-            x_per_screw_spacing = 0
-            y_per_screw_spacing = 0
-
-            for i in range(remaining_screw_count):
-                x_per_screw_spacing = self.x_screw_width / (x_screw_count + 1)
-                y_per_screw_spacing = self.y_screw_width / (y_screw_count + 1)
-
-                if x_per_screw_spacing >= y_per_screw_spacing:
-                    x_screw_count += 1
-                else:
-                    y_screw_count += 1
-
-                self.logger.debug('x_screw_count: %d, y_screw_count: %d', x_screw_count, y_screw_count)
-
+        for i in range(remaining_screw_count):
             x_per_screw_spacing = self.x_screw_width / (x_screw_count + 1)
             y_per_screw_spacing = self.y_screw_width / (y_screw_count + 1)
 
-            self.logger.debug('x_per_screw_spacing: %f, y_per_screw_spacing: %f', x_per_screw_spacing, y_per_screw_spacing)
+            if x_per_screw_spacing >= y_per_screw_spacing:
+                x_screw_count += 1
+            else:
+                y_screw_count += 1
 
-            for i in range(x_screw_count):
-                # Top Screws
-                self.screw_hole_coordinates.append([(i + 1) * x_per_screw_spacing, self.y_screw_width])
-                # Bottom Screws
-                self.screw_hole_coordinates.append([(i + 1) * x_per_screw_spacing, 0])
+            self.logger.debug('x_screw_count: %d, y_screw_count: %d', x_screw_count, y_screw_count)
 
-            for i in range(y_screw_count):
-                # Left Screws
-                self.screw_hole_coordinates.append([0, (i + 1) * y_per_screw_spacing])
-                # Right Screws
-                self.screw_hole_coordinates.append([self.x_screw_width, (i + 1) * y_per_screw_spacing])
+        x_per_screw_spacing = self.x_screw_width / (x_screw_count + 1)
+        y_per_screw_spacing = self.y_screw_width / (y_screw_count + 1)
 
-            # for coord in self.screw_hole_coordinates:
-            #     self.logger.debug(coord)
+        self.logger.debug('x_per_screw_spacing: %f, y_per_screw_spacing: %f', x_per_screw_spacing, y_per_screw_spacing)
 
-            for coords in self.screw_hole_coordinates:
-                coords_string = str(coords[0]) + ',' + str(coords[1])
-                # coords_string = ','.join(coords)
-                self.screw_hole_info[coords_string] = {
-                    'coordinates': coords,
-                    'x': coords[0] + self.screw_edge_inset,
-                    'y': coords[1] + self.screw_edge_inset,
-                    'support_directions': {
-                        'right': 0.0,
-                        'left': 0.0,
-                        'forward': 0.0,
-                        'back': 0.0
-                    }
+        for i in range(x_screw_count):
+            # Top Screws
+            self.screw_hole_coordinates.append([(i + 1) * x_per_screw_spacing, self.y_screw_width])
+            # Bottom Screws
+            self.screw_hole_coordinates.append([(i + 1) * x_per_screw_spacing, 0])
+
+        for i in range(y_screw_count):
+            # Left Screws
+            self.screw_hole_coordinates.append([0, (i + 1) * y_per_screw_spacing])
+            # Right Screws
+            self.screw_hole_coordinates.append([self.x_screw_width, (i + 1) * y_per_screw_spacing])
+
+        # for coord in self.screw_hole_coordinates:
+        #     self.logger.debug(coord)
+
+        for coords in self.screw_hole_coordinates:
+            coords_string = str(coords[0]) + ',' + str(coords[1])
+            # coords_string = ','.join(coords)
+            self.screw_hole_info[coords_string] = {
+                'coordinates': coords,
+                'x': coords[0] + self.screw_edge_inset,
+                'y': coords[1] + self.screw_edge_inset,
+                'support_directions': {
+                    'right': 0.0,
+                    'left': 0.0,
+                    'forward': 0.0,
+                    'back': 0.0
                 }
-        else:
-            raise ValueError('Screw Edge Inset %f must be greater than case_wall_thickness: %f + screw_hole_body_radius: %f = %f\n' % (self.screw_edge_inset, self.case_wall_thickness, self.screw_hole_body_radius, self.case_wall_thickness + self.screw_hole_body_radius))
-
+            }
+        
 
     def screw_hole_objects(self, tap = False):
 
@@ -496,28 +476,6 @@ class Body():
         screw_hole_body_scaled_collection = union()
         corner_count = 4
         remaining_screws = 0
-
-        invalid_screw_count = False
-        try:
-            if self.screw_count >= 4:
-                if self.screw_count % 2 != 0:
-                    invalid_screw_count = True
-                    raise ValueError('Screw count must be even')
-            else:
-                invalid_screw_count = True
-                raise ValueError('Screw count must be at least 4')
-        except:
-            if invalid_screw_count == True:
-                raise
-            else:
-                self.logger.info('No screw holes defined')
-                return None
-
-        cable_hole = False
-        try:
-            cable_hole = self.cable_hole
-        except:
-            self.logger.debug('No cable hole defined')
         
         for coord_string in self.screw_hole_info.keys():
             coord = self.screw_hole_info[coord_string]['coordinates']
@@ -526,7 +484,7 @@ class Body():
 
             # self.logger.info('coord: %s, self.x_screw_width: %f, self.y_screw_width: %f', str(coord), self.x_screw_width, self.y_screw_width)
             # Skip the center top screw hole if it is in the top center and the case has a cable hole
-            if cable_hole == True and y == self.y_screw_width and x == self.x_screw_width / 2:
+            if self.parameters.cable_hole == True and y == self.y_screw_width and x == self.x_screw_width / 2:
                 # self.logger.info('coord: %s', str(coord))
                 continue
 

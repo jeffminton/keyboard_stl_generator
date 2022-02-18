@@ -193,8 +193,7 @@ class Switch(Cell):
         switch_poly_path = [range(len(switch_poly_points))]
 
         stab_poly_points, support_cutout_poly_points = self.switch_config.get_stab_poly_info(key_width = self.switch_length)
-        stab_poly_path = [range(len(stab_poly_points))]
-        support_cutout_poly_path = [range(len(support_cutout_poly_points))]
+        
         
         self.logger.debug('\tswitch_poly_points: %d, switch_poly_path: %d', len(switch_poly_points), len(switch_poly_path))
 
@@ -202,11 +201,14 @@ class Switch(Cell):
         cutout_polygon = polygon(switch_poly_points, switch_poly_path)
 
         # Create stab polygon if it is defined
-        if stab_poly_points is not None and stab_poly_path is not None:
+        if stab_poly_points is not None:
+            stab_poly_path = [range(len(stab_poly_points))]
+            
             self.logger.debug('\t\tstab_poly_points: %d, stab_poly_path: %d', len(stab_poly_points), len(stab_poly_path))
             stab = polygon(stab_poly_points, stab_poly_path) + mirror([1, 0, 0]) ( polygon(stab_poly_points, stab_poly_path) )
             # stab = polygon(stab_poly_points, stab_poly_path)# + mirror([1, 0, 0]) ( polygon(stab_poly_points, stab_poly_path) )
             if support_cutout_poly_points is not None:
+                support_cutout_poly_path = [range(len(support_cutout_poly_points))]
                 support_cutout = polygon(support_cutout_poly_points, support_cutout_poly_path) + mirror([1, 0, 0]) ( polygon(support_cutout_poly_points, support_cutout_poly_path) )
             cutout_polygon += stab
 
@@ -216,7 +218,6 @@ class Switch(Cell):
             cutout += down( (10 / 2) + (self.parameters.plate_thickness / 2) ) (
                 linear_extrude(height = 10, center = True)(support_cutout)
             )
-
 
         cutout = rotate(a = 180, v = (0, 0, 1)) ( cutout )
 

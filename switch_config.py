@@ -86,6 +86,10 @@ class SwitchConfig():
             'alps': self.alps_stab_cutout
         }
 
+
+        self.cherry_support_cutout_h = 3.5
+        self.cherry_stab_bar_width = 2.5
+
     
     def get_switch_poly_info(self):
         if self.switch_type in self.switch_type_function_dict.keys():
@@ -265,16 +269,19 @@ class SwitchConfig():
                 [-s + self.MAIN_BODY_SWITCH_SIDE_X_OFFSET + self.kerf, -self.BAR_BOTTOM_Y -  self.kerf] #19
             ]
 
-            support_cutout_x = s - 3.375 -  self.kerf
-            support_cutout_y = 6.77 + self.kerf
-            support_cutout_w = (s + 3.375 + self.kerf) - (s - 3.375 -  self.kerf)
-            support_cutout_h = 3.5 + self.kerf
+            support_cutout_x = s - 3.375 -  (self.kerf * 2 )
+            support_cutout_y = 7.97 + (self.kerf * 2 )
+            support_cutout_w = (s + 4.375 + (self.kerf * 2 )) - (s - 4.375 -  (self.kerf * 2 ))
+            support_cutout_h = self.cherry_support_cutout_h + (self.kerf * 2 )
+            stab_bar_width = self.cherry_stab_bar_width + (self.kerf * 2 )
 
             support_cutout_poly_points = [
-                [support_cutout_x, support_cutout_y],
-                [support_cutout_x, support_cutout_y + support_cutout_h],
-                [support_cutout_x + support_cutout_w, support_cutout_y + support_cutout_h],
-                [support_cutout_x + support_cutout_w, support_cutout_y]
+                [(s - 4.375 -  (self.kerf * 2 )), (6.77 + (self.kerf * 2 ) + stab_bar_width)],
+                [(s - 4.375 -  (self.kerf * 2 )), (6.77 + (self.kerf * 2 )) + support_cutout_h],
+                [(s + 4.375 + (self.kerf * 2 )), (6.77 + (self.kerf * 2 )) + support_cutout_h],
+                [(s + 4.375 + (self.kerf * 2 )), (6.77 + (self.kerf * 2 ))],
+                [(-s + 3.375 + (self.kerf * 2 )), (6.77 + (self.kerf * 2 ))],
+                [(-s + 3.375 + (self.kerf * 2 )), (6.77 + (self.kerf * 2 ) + stab_bar_width)]
             ]
 
             self.logger.info(support_cutout_poly_points)
@@ -324,16 +331,19 @@ class SwitchConfig():
                 [-s + 3.375 + self.kerf, -2.3 -  self.kerf], # 27
             ]
             
-            support_cutout_x = s - 3.375 -  self.kerf
-            support_cutout_y = 6.77 + self.kerf
-            support_cutout_w = (s + 3.375 + self.kerf) - (s - 3.375 -  self.kerf)
-            support_cutout_h = 3.5 + self.kerf
+            support_cutout_x = s - 3.375 -  (self.kerf * 2 )
+            support_cutout_y = 7.97 + (self.kerf * 2 )
+            support_cutout_w = (s + 4.375 + (self.kerf * 2 )) - (s - 4.375 -  (self.kerf * 2 ))
+            support_cutout_h = self.cherry_support_cutout_h + (self.kerf * 2 )
+            stab_bar_width = self.cherry_stab_bar_width + (self.kerf * 2 )
 
             support_cutout_poly_points = [
-                [support_cutout_x, support_cutout_y],
-                [support_cutout_x, support_cutout_y + support_cutout_h],
-                [support_cutout_x + support_cutout_w, support_cutout_y + support_cutout_h],
-                [support_cutout_x + support_cutout_w, support_cutout_y]
+                [(s - 4.375 -  (self.kerf * 2 )), (6.77 + (self.kerf * 2 ) + stab_bar_width)],
+                [(s - 4.375 -  (self.kerf * 2 )), (6.77 + (self.kerf * 2 )) + support_cutout_h],
+                [(s + 4.375 + (self.kerf * 2 )), (6.77 + (self.kerf * 2 )) + support_cutout_h],
+                [(s + 4.375 + (self.kerf * 2 )), (6.77 + (self.kerf * 2 ))],
+                [(-s + 3.375 + (self.kerf * 2 )), (6.77 + (self.kerf * 2 ))],
+                [(-s + 3.375 + (self.kerf * 2 )), (6.77 + (self.kerf * 2 ) + stab_bar_width)]
             ]
 
             self.logger.info(support_cutout_poly_points)

@@ -174,7 +174,22 @@ class Parameters():
             parameter_error = True
             error_message += 'Screw Edge Inset %f must be greater than case_wall_thickness: %f + screw_hole_body_radius: %f = %f\n' % (self.screw_edge_inset, self.case_wall_thickness, self.screw_hole_body_radius, self.case_wall_thickness + self.screw_hole_body_radius)
         
+        if self.screw_count > 0 :
+            if self.screw_count < 4:
+                parameter_error = True
+                error_message += 'Screw count must be at least 4\n'
+            if self.screw_count % 2 != 0:
+                parameter_error = True
+                error_message +=  'Screw count must be even\n'
+            
+        if self.switch_type not in self.switch_config.switch_type_function_dict.keys():
+            parameter_error = True
+            error_message += 'switch type %s is not a valid switch type' % (self.switch_type)
+
+        if self.stabilizer_type not in self.switch_config.stab_type_function_dict.keys():
+            parameter_error = True
+            error_message += 'stabilizer type %s is not a valid stabilizer type' % (self.stabilizer_type)
 
         if parameter_error == True:
-            print(error_message)
+            print('ERROR:', error_message)
             exit(1)
