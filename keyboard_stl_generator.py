@@ -19,6 +19,7 @@ from solid.utils import *
 
 from parameters import Parameters
 from keyboard import Keyboard
+from cable import Cable
 
 graph = False
 
@@ -261,6 +262,11 @@ def main():
 
                     openscad_command_list = ['openscad', '-o', '%s' % (stl_file_name), '%s' % (scad_file_name)]
                     subprocess_dict[stl_file_name] = subprocess.Popen(openscad_command_list)
+
+    if parameters.cable_hole == True:
+        cable = Cable(parameters)
+        scad_file_name = scad_folder_path / (layout_name + '_cable_holder' + scad_postfix)
+        scad_render_to_file(cable.holder_full(), scad_file_name, file_header=f'$fn = {FRAGMENTS};')
 
     if args.render:
         logger.debug(subprocess_dict)
