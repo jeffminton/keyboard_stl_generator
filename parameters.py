@@ -95,8 +95,8 @@ class Parameters():
         self.screw_hole_body_support_x_factor = 4
 
         self.cable_hole = False
-        self.hole_width = 10
-        self.hole_height = 10
+        self.cable_hole_width = 10
+        self.cable_hole_height = 10
         self.cable_hole_up_offset = 1
         self.cable_hole_down_offset = 1
 

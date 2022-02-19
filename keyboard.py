@@ -381,10 +381,10 @@ class Keyboard():
     def get_cable_hole(self):
 
         if self.cable_hole == True:
-            return up(self.body.case_height_base_removed - (self.parameters.hole_height / 2) - self.body.plate_thickness - self.cable_hole_down_offset ) (
+            return up(self.body.case_height_base_removed - (self.parameters.cable_hole_height / 2) - self.body.plate_thickness - self.cable_hole_down_offset ) (
                 right(self.parameters.left_margin + (self.body.real_max_x / 2)) ( 
                     forward(self.parameters.bottom_margin + self.parameters.top_margin + self.body.real_max_y) ( 
-                        cube([self.parameters.hole_width, self.parameters.case_wall_thickness * 2, self.parameters.hole_height], center = True) 
+                        cube([self.parameters.cable_hole_width, self.parameters.case_wall_thickness * 2, self.parameters.cable_hole_height], center = True) 
                     ) 
                 ) 
             )
