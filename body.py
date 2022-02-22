@@ -1,4 +1,4 @@
-from ast import Param
+# from ast import Param
 import math
 
 from solid import *
@@ -57,17 +57,17 @@ class Body():
 
         self.bottom_cover_thickness = self.parameters.bottom_cover_thickness
 
-        self.case_height_extra = 30
+        self.case_height_extra = self.parameters.case_height_extra_fill
 
-        self.min_x = 0.0
-        self.max_x = 0.0
-        self.min_y = 0.0
-        self.max_y = 0.0
+        self.min_x = self.parameters.min_x
+        self.max_x = self.parameters.max_x
+        self.min_y = self.parameters.min_y
+        self.max_y = self.parameters.max_y
 
-        self.real_max_x = 0.0
-        self.real_max_y = 0.0
-        self.real_case_width = 0.0
-        self.real_case_height = 0.0
+        self.real_max_x = self.parameters.real_max_x
+        self.real_max_y = self.parameters.real_max_y
+        self.real_case_width = self.parameters.real_case_width
+        self.real_case_height = self.parameters.real_case_height
 
         # self.parameter_dict = parameter_dict
 
@@ -78,8 +78,19 @@ class Body():
 
         self.screw_hole_info = {}
 
+        self.case_height_base_removed = self.parameters.case_height_base_removed
+        self.case_height_extra_fill = self.parameters.case_height_extra_fill
+        self.side_margin_diff = self.parameters.side_margin_diff
+        self.top_margin_diff = self.parameters.top_margin_diff
+        self.screw_tap_hole_diameter = self.parameters.screw_tap_hole_diameter
+        self.screw_hole_body_diameter = self.parameters.screw_hole_body_diameter
+        self.screw_hole_body_radius = self.parameters.screw_hole_body_radius
+        self.x_screw_width = self.parameters.x_screw_width
+        self.y_screw_width = self.parameters.y_screw_width
+        self.bottom_section_count = self.parameters.bottom_section_count
+
         # Calculated attributes
-        self.update_calculated_attributes()
+        # self.update_calculated_attributes()
 
         # self.x_build_size = 200.0
         # self.y_build_size = 200.0
@@ -133,17 +144,16 @@ class Body():
     
     def update_calculated_attributes(self):
         # Calculated attributes
-        self.case_height_base_removed = self.case_height - self.bottom_cover_thickness
-        self.case_height_extra_fill = self.case_height + self.case_height_extra
-        self.side_margin_diff = self.right_margin - self.left_margin
-        self.top_margin_diff = self.bottom_margin - self.top_margin
-        self.screw_tap_hole_diameter = self.screw_diameter - 0.35
-        self.screw_hole_body_diameter = self.screw_diameter + (self.screw_hole_body_wall_width * 2)
-        self.screw_hole_body_radius = self.screw_hole_body_diameter / 2
-        self.x_screw_width = self.real_case_width - ((self.screw_edge_inset * 2))# + self.screw_diameter)
-        self.y_screw_width = self.real_case_height - ((self.screw_edge_inset * 2))# + self.screw_diameter)
-        self.bottom_section_count = math.ceil(self.real_case_width / self.x_build_size)
-        # self.screw_hole_body_support_end_x = (self.case_height_extra_fill / self.screw_hole_body_support_x_factor) + x_offset
+        self.case_height_base_removed = self.parameters.case_height_base_removed
+        self.case_height_extra_fill = self.parameters.case_height_extra_fill
+        self.side_margin_diff = self.parameters.side_margin_diff
+        self.top_margin_diff = self.parameters.top_margin_diff
+        self.screw_tap_hole_diameter = self.parameters.screw_tap_hole_diameter
+        self.screw_hole_body_diameter = self.parameters.screw_hole_body_diameter
+        self.screw_hole_body_radius = self.parameters.screw_hole_body_radius
+        self.x_screw_width = self.parameters.x_screw_width
+        self.y_screw_width = self.parameters.y_screw_width
+        self.bottom_section_count = self.parameters.bottom_section_count
 
 
     def set_dimensions(self, max_x, min_y, min_x, max_y):
@@ -336,7 +346,7 @@ class Body():
 
 
     def screw_hole_body_support(self, direction = 'right', screw_name = ''):
-        # self.logger.info('screw_hole_body_support: screw_name: %s, direction: %s', screw_name, direction)
+        # self.logger.debug('screw_hole_body_support: screw_name: %s, direction: %s', screw_name, direction)
         x_offset = self.screw_hole_body_radius
         screw_hole_body_support_end_x = (self.case_height_extra_fill / self.screw_hole_body_support_x_factor) + x_offset
         poly_points = [
@@ -348,7 +358,7 @@ class Body():
         ]
         poly_path = [[0, 1, 2, 3]]
 
-        # self.logger.info(poly_points)
+        # self.logger.debug(poly_points)
 
         hole_support = polygon(poly_points, poly_path)
         hole_support = linear_extrude(height = 2, center = True) ( hole_support )
@@ -414,7 +424,7 @@ class Body():
 
         remaining_screw_count = int((self.screw_count - 4) / 2)
 
-        # self.logger.info('remaining_screw_count: %f', type(remaining_screw_count))
+        # self.logger.debug('remaining_screw_count: %f', type(remaining_screw_count))
 
         x_per_screw_spacing = 0
         y_per_screw_spacing = 0
@@ -482,10 +492,10 @@ class Body():
             x = coord[0]
             y = coord[1]
 
-            # self.logger.info('coord: %s, self.x_screw_width: %f, self.y_screw_width: %f', str(coord), self.x_screw_width, self.y_screw_width)
+            # self.logger.debug('coord: %s, self.x_screw_width: %f, self.y_screw_width: %f', str(coord), self.x_screw_width, self.y_screw_width)
             # Skip the center top screw hole if it is in the top center and the case has a cable hole
             if self.parameters.cable_hole == True and y == self.y_screw_width and x == self.x_screw_width / 2:
-                # self.logger.info('coord: %s', str(coord))
+                # self.logger.debug('coord: %s', str(coord))
                 continue
 
             hole = right(x) ( forward(y) ( self.screw_hole(tap = tap) ) )
@@ -516,7 +526,7 @@ class Body():
                 left_support = True
 
             hole_body = self.screw_hole_body(right_support = right_support, left_support = left_support, forward_support = forward_support, back_support = back_support, screw_name = coord_string)
-            scaled_hole_body = scale([1.0, 1.0, 1.0]) (hole_body)
+            scaled_hole_body = scale([1.1, 1.1, 1.0]) (hole_body)
 
             hole_body = right(x) (
                 forward(y) (
@@ -539,7 +549,7 @@ class Body():
         # x_offset = (-self.left_margin)
         y_offset = (self.real_max_y + self.bottom_margin) - self.screw_edge_inset
 
-        # self.logger.info('-self.left_margin: %f, self.screw_edge_inset: %f, x_offset: %f', -self.left_margin, self.screw_edge_inset, x_offset)
+        # self.logger.debug('-self.left_margin: %f, self.screw_edge_inset: %f, x_offset: %f', -self.left_margin, self.screw_edge_inset, x_offset)
 
         screw_hole_collection = right(x_offset) ( 
             back(y_offset) (

@@ -1,12 +1,31 @@
-
+import logging
+import math
 
 from switch_config import SwitchConfig
+from cell import Cell
 
 
 
 class Parameters():
 
     def __init__(self, parameter_dict: dict = None):
+
+        self.logger = logging.getLogger('Parameters')
+        self.logger.setLevel(logging.INFO)
+
+        if not self.logger.hasHandlers():
+        # create console handler and set level to debug
+            ch = logging.StreamHandler()
+            ch.setLevel(logging.INFO)
+
+            # create formatter
+            formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+
+            # add formatter to ch
+            ch.setFormatter(formatter)
+
+            self.logger.addHandler(ch)
+
         self.parameter_dict = parameter_dict
 
         self.default_parameter_dict = {
@@ -95,12 +114,45 @@ class Parameters():
         self.screw_hole_body_support_x_factor = 4
 
         self.cable_hole = False
+        self.cable_diameter = 4
         self.cable_hole_width = 10
         self.cable_hole_height = 10
         self.cable_hole_up_offset = 1
         self.cable_hole_down_offset = 1
 
         self.switch_config = None
+
+        self.test_block = False
+        self.test_block_x_start = 0
+        self.test_block_x_end = 0
+        self.test_block_y_start = 0
+        self.test_block_y_end = 0
+        self.test_block_z_start = 0
+        self.test_block_z_end = 0
+
+        self.case_height_extra = 30
+
+        self.case_height_base_removed = None
+        self.case_height_extra_fill = None
+        self.side_margin_diff = None
+        self.top_margin_diff = None
+        self.screw_tap_hole_diameter = None
+        self.screw_hole_body_diameter = None
+        self.screw_hole_body_radius = None
+        self.x_screw_width = None
+        self.y_screw_width = None
+        self.bottom_section_count = None
+        self.screw_hole_body_support_end_x = None
+
+        self.min_x = 0.0
+        self.max_x = 0.0
+        self.min_y = 0.0
+        self.max_y = 0.0
+
+        self.real_max_x = 0.0
+        self.real_max_y = 0.0
+        self.real_case_width = 0.0
+        self.real_case_height = 0.0
 
         # self.build_attr_from_dict(self.default_parameter_dict)
         
@@ -112,17 +164,38 @@ class Parameters():
 
     def update_calculated_attributes(self):
         # Calculated attributes
-        # self.case_height_base_removed = self.case_height - self.bottom_cover_thickness
-        # self.case_height_extra_fill = self.case_height + self.case_height_extra
-        # self.side_margin_diff = self.right_margin - self.left_margin
-        # self.top_margin_diff = self.bottom_margin - self.top_margin
-        # self.screw_tap_hole_diameter = self.screw_diameter - 0.35
+        self.case_height_base_removed = self.case_height - self.bottom_cover_thickness
+        self.case_height_extra_fill = self.case_height + self.case_height_extra
+        self.side_margin_diff = self.right_margin - self.left_margin
+        self.top_margin_diff = self.bottom_margin - self.top_margin
+        self.screw_tap_hole_diameter = self.screw_diameter - 0.35
         self.screw_hole_body_diameter = self.screw_diameter + (self.screw_hole_body_wall_width * 2)
         self.screw_hole_body_radius = self.screw_hole_body_diameter / 2
-        # self.x_screw_width = self.real_case_width - ((self.screw_edge_inset * 2))# + self.screw_diameter)
-        # self.y_screw_width = self.real_case_height - ((self.screw_edge_inset * 2))# + self.screw_diameter)
-        # self.bottom_section_count = math.ceil(self.real_case_width / self.x_build_size)
+        self.x_screw_width = self.real_case_width - ((self.screw_edge_inset * 2))# + self.screw_diameter)
+        self.y_screw_width = self.real_case_height - ((self.screw_edge_inset * 2))# + self.screw_diameter)
+        self.bottom_section_count = math.ceil(self.real_case_width / self.x_build_size)
         # self.screw_hole_body_support_end_x = (self.case_height_extra_fill / self.screw_hole_body_support_x_factor) + x_offset
+
+
+    def set_dimensions(self, max_x, min_y, min_x, max_y):
+
+        self.max_x = max_x
+        self.max_x = max_x
+        self.min_y = min_y
+        self.max_y = max_y
+        self.logger.debug('min_x: %f, max_x: %f, max_y: %f, min_y: %f', self.min_x, self.max_x, self.max_y, self.min_y)
+
+        # Get rhe calculated real max and y sizes of the board
+        self.real_max_x = Cell.u(self.max_x)
+        self.real_max_y = Cell.u(abs(self.min_y))
+
+        self.real_case_width = self.real_max_x + self.left_margin + self.right_margin
+        self.real_case_height = self.real_max_y + self.top_margin + self.bottom_margin
+
+        self.logger.debug('real_max_x: %d, real_max_y: %s', self.real_max_x, self.real_max_y)
+
+        self.update_calculated_attributes()
+
 
 
     def build_attr_from_dict(self, parameter_dict):
