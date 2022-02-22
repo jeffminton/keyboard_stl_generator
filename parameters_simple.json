@@ -2,10 +2,10 @@
     "x_build_size" : 200,
     "y_build_size" : 200,
 
-    "kerf" : 0.01,
+    "kerf" : 0.05,
 
     "switch_type": "mx_openable",
-    "stabilizer_type": "costar",
+    "stabilizer_type": "cherry",
 
     "custom_shape": false, 
     "custum_shape_points": null,

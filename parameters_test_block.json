@@ -20,13 +20,13 @@
     "left_margin" : 10,
     "right_margin" : 10,
 
-    "case_height" : 18,
+    "case_height" : 13,
     "case_wall_thickness" : 3.0,
     "plate_thickness" : 1.111,
     "plate_corner_radius" : 4,
     "bottom_cover_thickness": 2,
 
-    "tilt": 2,
+    "tilt": 0,
 
     "screw_count": 4,
     "screw_diameter": 4,
@@ -36,5 +36,18 @@
     "cable_hole_width": 11,
     "cable_hole_height": 7,
     "cable_diameter": 3,
-    "cable_hole_down_offset": 5
+    "cable_hole_down_offset": 1,
+
+
+
+
+    "test_block": true,
+    "test_block_x_start": 57,
+    "test_block_x_end": 77,
+    "test_block_y_start": 115,
+    "test_block_y_end": 140,
+    "test_block_z_start": -50,
+    "test_block_z_end": 100
+
+    
 }
