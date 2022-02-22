@@ -88,7 +88,7 @@ def main():
     output_base_folder = base_path / layout_name
     scad_folder_path = output_base_folder / 'scad'
     stl_folder_path = output_base_folder / 'stl'
-    graph_folder_path = output_base_folder / 'graph'
+    # graph_folder_path = output_base_folder / 'graph'
 
     if output_base_folder.is_dir() == False:
         output_base_folder.mkdir()
@@ -99,8 +99,8 @@ def main():
     if stl_folder_path.is_dir() == False:
         stl_folder_path.mkdir()
 
-    if graph == True and graph_folder_path.is_dir() == False:
-        graph_folder_path.mkdir()
+    # if graph == True and graph_folder_path.is_dir() == False:
+    #     graph_folder_path.mkdir()
 
     logger.debug('layout_name: %s', str(layout_name))
     logger.debug('base_path: %s', str(base_path))
@@ -150,8 +150,9 @@ def main():
 
     logger.debug('keyboard_layout_dict:', keyboard_layout_dict)
 
-    parameter_dict = None
+    
     # Read parameter file
+    parameter_dict = None
     if args.parameter_file is not None:
         f = open(args.parameter_file)
 
@@ -176,7 +177,7 @@ def main():
     # Process the keyboard layout object
     keyboard.process_keyboard_layout(keyboard_layout_dict)
 
-    logger.info('kerf: %f', keyboard.kerf)
+    logger.debug('kerf: %f', keyboard.kerf)
 
     if args.all_sections == True:
         for section in range(keyboard.get_top_section_count()):
@@ -210,7 +211,7 @@ def main():
         rendered_object_dict[args.section]['all'] = keyboard.get_assembly(all = True)
         rendered_object_dict[args.section]['plate'] = keyboard.get_assembly(plate_only = True)
         
-
+    logger.info('Case Height: %f, Case Width: %f', parameters.real_case_height, parameters.real_case_width)
     logger.info('Sections In Top: %d', keyboard.get_top_section_count())
     logger.info('Sections In Bottom: %d', keyboard.get_bottom_section_count())
 
@@ -218,6 +219,11 @@ def main():
     # if args.section > -1:
     #     assembly -= keyboard.get_section_remove_block(args.section)
 
+
+
+    ############################################################
+    # Render SCAD and STL files
+    ############################################################
     subprocess_dict = {}
 
     switch_type_for_filename = ''
@@ -227,10 +233,10 @@ def main():
         switch_type_for_filename = '_' + parameters.switch_type
         stab_type_for_filename = '_' + parameters.stabilizer_type
 
-    if graph == True:
-        gv_file_name = graph_folder_path / (layout_name + gv_postfix)
-        logger.info('Global: %s', gv_file_name)
-        keyboard.switch_collection.neighbor_check('global', gv_file_name)
+    # if graph == True:
+    #     gv_file_name = graph_folder_path / (layout_name + gv_postfix)
+    #     logger.info('Global: %s', gv_file_name)
+    #     keyboard.switch_collection.neighbor_check('global', gv_file_name)
 
     for section in rendered_object_dict.keys():
         section_postfix = ''
@@ -240,10 +246,10 @@ def main():
         if args.exploded == True:
             section_postfix = '_exploded'
 
-        if graph == True and section_postfix != '':
-            gv_file_name = graph_folder_path / (layout_name + section_postfix + gv_postfix)
-            logger.info('Local: %s', gv_file_name)
-            keyboard.switch_section_list[section].neighbor_check('local', gv_file_name)
+        # if graph == True and section_postfix != '':
+        #     gv_file_name = graph_folder_path / (layout_name + section_postfix + gv_postfix)
+        #     logger.info('Local: %s', gv_file_name)
+        #     keyboard.switch_section_list[section].neighbor_check('local', gv_file_name)
 
         for part_name in rendered_object_dict[section].keys():
             part_name_formatted = '_' + part_name
@@ -265,9 +271,38 @@ def main():
 
     if parameters.cable_hole == True:
         cable = Cable(parameters)
-        scad_file_name = scad_folder_path / (layout_name + '_cable_holder' + scad_postfix)
-        scad_render_to_file(cable.holder_full(), scad_file_name, file_header=f'$fn = {FRAGMENTS};')
 
+        side = 'right'
+        scad_file_name = scad_folder_path / (layout_name + '_cable_holder_' + side + scad_postfix)
+        stl_file_name = stl_folder_path / (layout_name + '_cable_holder_' + side + stl_postfix)
+        logger.info('Generate scad file with name %s', scad_file_name)
+        scad_render_to_file(cable.holder_side(side), scad_file_name, file_header=f'$fn = {FRAGMENTS};')
+        if args.render:
+            openscad_command_list = ['openscad', '-o', '%s' % (stl_file_name), '%s' % (scad_file_name)]
+            subprocess_dict[stl_file_name] = subprocess.Popen(openscad_command_list)
+
+        side = 'left'
+        scad_file_name = scad_folder_path / (layout_name + '_cable_holder_' + side + scad_postfix)
+        stl_file_name = stl_folder_path / (layout_name + '_cable_holder_' + side + stl_postfix)
+        logger.info('Generate scad file with name %s', scad_file_name)
+        scad_render_to_file(cable.holder_side(side), scad_file_name, file_header=f'$fn = {FRAGMENTS};')
+        if args.render:
+            openscad_command_list = ['openscad', '-o', '%s' % (stl_file_name), '%s' % (scad_file_name)]
+            subprocess_dict[stl_file_name] = subprocess.Popen(openscad_command_list)
+
+        scad_file_name = scad_folder_path / (layout_name + '_cable_holder_all' + scad_postfix)
+        stl_file_name = scad_folder_path / (layout_name + '_cable_holder_all' + stl_postfix)
+        logger.info('Generate scad file with name %s', scad_file_name)
+        scad_render_to_file(cable.holder_all(), scad_file_name, file_header=f'$fn = {FRAGMENTS};')
+        if args.render:
+            openscad_command_list = ['openscad', '-o', '%s' % (stl_file_name), '%s' % (scad_file_name)]
+            subprocess_dict[stl_file_name] = subprocess.Popen(openscad_command_list)
+
+
+
+    ################################################################
+    #  Wait for render processes to complete
+    ################################################################
     if args.render:
         logger.debug(subprocess_dict)
         running = True
@@ -287,6 +322,8 @@ def main():
                         logger.info('Render Complete: file: %s', stl_file_name)
                         subprocess_dict[stl_file_name] = None
             # time.sleep(1)
+
+
 
     logger.info('Generation Complete')
 
