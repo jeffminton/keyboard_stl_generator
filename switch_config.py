@@ -284,7 +284,7 @@ class SwitchConfig():
                 [(-s + 3.375 + (self.kerf * 2 )), (6.77 + (self.kerf * 2 ) + stab_bar_width)]
             ]
 
-            self.logger.info(support_cutout_poly_points)
+            self.logger.debug(support_cutout_poly_points)
 
             return poly_points, support_cutout_poly_points
 
@@ -346,7 +346,7 @@ class SwitchConfig():
                 [(-s + 3.375 + (self.kerf * 2 )), (6.77 + (self.kerf * 2 ) + stab_bar_width)]
             ]
 
-            self.logger.info(support_cutout_poly_points)
+            self.logger.debug(support_cutout_poly_points)
 
             return poly_points, support_cutout_poly_points
 
@@ -387,10 +387,19 @@ class SwitchConfig():
                 [s - 1.333 -  self.kerf, 9.08 + self.kerf] # 3
             ]
 
-            support_cutout_x = s - 1.333 -  self.kerf
-            support_cutout_y = 9.08 + self.kerf
-            support_cutout_w = (s + 1.333 + self.kerf) - (s - 1.333 -  self.kerf)
-            support_cutout_h = 2 + self.kerf
+            support_cutout_x = s - 2.133 - (self.kerf * 2)
+            support_cutout_y = 9.08 - (self.kerf * 2) - 2
+            support_cutout_w = (s + 2.133 + (self.kerf * 2)) - (s - 2.133 -  (self.kerf * 2))
+            support_cutout_h = 1.5 + (self.kerf * 2) + 2
+
+            # support_cutout_poly_points = [
+            #     [(s - 4.375 -  (self.kerf * 2 )), (6.77 + (self.kerf * 2 ) + stab_bar_width)],
+            #     [(s - 4.375 -  (self.kerf * 2 )), (6.77 + (self.kerf * 2 )) + support_cutout_h],
+            #     [(s + 4.375 + (self.kerf * 2 )), (6.77 + (self.kerf * 2 )) + support_cutout_h],
+            #     [(s + 4.375 + (self.kerf * 2 )), (6.77 + (self.kerf * 2 ))],
+            #     [(-s + 3.375 + (self.kerf * 2 )), (6.77 + (self.kerf * 2 ))],
+            #     [(-s + 3.375 + (self.kerf * 2 )), (6.77 + (self.kerf * 2 ) + stab_bar_width)]
+            # ]
 
             support_cutout_poly_points = [
                 [support_cutout_x, support_cutout_y],
@@ -399,7 +408,7 @@ class SwitchConfig():
                 [support_cutout_x + support_cutout_w, support_cutout_y]
             ]
 
-            self.logger.info(support_cutout_poly_points)
+            self.logger.debug(support_cutout_poly_points)
             return poly_points, support_cutout_poly_points
 
         else:

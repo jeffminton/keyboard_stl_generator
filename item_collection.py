@@ -271,7 +271,7 @@ class ItemCollection:
                     neighbor_all_neighbors_set = neighbor.get_all_neighbors_set(neighbor_group = neighbor_group)
 
                     if neighbor_all_neighbors_set == False:
-                        # self.logger.info('\t\tset neighbors for neighbor switch %s', str(neighbor))
+                        # self.logger.debug('\t\tset neighbors for neighbor switch %s', str(neighbor))
                         # pos = '%f,%f!' % (neighbor.center_x, neighbor.center_y)
                         # self.dot_recurse.node(neighbor.cell_value, pos = pos)
                         # self.dot_recurse.edge(item.cell_value, neighbor.cell_value)
@@ -303,7 +303,7 @@ class ItemCollection:
 
         filename = output_filename.name.replace('.gv', '_recurse.gv')
         path = output_filename.parent
-        self.logger.info('type(output_filename): %s', str(type(output_filename)))
+        self.logger.debug('type(output_filename): %s', str(type(output_filename)))
 
         # self.dot_recurse.render(path / filename, engine = 'neato')
 
