@@ -272,20 +272,21 @@ def main():
     if parameters.cable_hole == True:
         cable = Cable(parameters)
 
-        side = 'right'
+        side = 'main'
         scad_file_name = scad_folder_path / (layout_name + '_cable_holder_' + side + scad_postfix)
         stl_file_name = stl_folder_path / (layout_name + '_cable_holder_' + side + stl_postfix)
         logger.info('Generate scad file with name %s', scad_file_name)
-        scad_render_to_file(cable.holder_side(side), scad_file_name, file_header=f'$fn = {FRAGMENTS};')
+        scad_render_to_file(cable.holder_main(), scad_file_name, file_header=f'$fn = {FRAGMENTS};')
         if args.render:
             openscad_command_list = ['openscad', '-o', '%s' % (stl_file_name), '%s' % (scad_file_name)]
             subprocess_dict[stl_file_name] = subprocess.Popen(openscad_command_list)
 
-        side = 'left'
+
+        side = 'clamp'
         scad_file_name = scad_folder_path / (layout_name + '_cable_holder_' + side + scad_postfix)
         stl_file_name = stl_folder_path / (layout_name + '_cable_holder_' + side + stl_postfix)
         logger.info('Generate scad file with name %s', scad_file_name)
-        scad_render_to_file(cable.holder_side(side), scad_file_name, file_header=f'$fn = {FRAGMENTS};')
+        scad_render_to_file(cable.holder_clamp(), scad_file_name, file_header=f'$fn = {FRAGMENTS};')
         if args.render:
             openscad_command_list = ['openscad', '-o', '%s' % (stl_file_name), '%s' % (scad_file_name)]
             subprocess_dict[stl_file_name] = subprocess.Popen(openscad_command_list)

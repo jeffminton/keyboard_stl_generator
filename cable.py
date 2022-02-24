@@ -34,20 +34,38 @@ class Cable():
 
         self.stop_plate_overhang = 3
 
-        self.clip_short_edge = 1
+        self.clip_short_edge = 1.2
 
         self.clip_long_edge = 6
 
         self.clip_arm_thickness = 1
 
-        self.clip_body_gap = 0.1
+        self.clip_body_gap = 0.75
 
         self.inner_block_clip_offset = 1
 
         self.kerf = self.parameters.kerf * 2
 
-        self.cable_holder_height = self.parameters.cable_hole_height - self.parameters.kerf
+        self.cable_hole_holder_offset = 0.5
 
+        self.cable_holder_height = self.parameters.cable_hole_height - self.cable_hole_holder_offset # (self.parameters.kerf * 4)
+
+        self.inner_block_width = self.parameters.cable_hole_width - (self.inner_block_clip_offset * 2) - (self.clip_arm_thickness * 2) 
+
+        self.elipse_vertical = False
+        self.elipse_horizontal = True
+        self.elipse_ratio = .1
+        self.x_scale = 1.0
+        self.y_scale = 1.0
+
+        if self.elipse_horizontal == True:
+            self.x_scale = self.x_scale + self.elipse_ratio
+            self.y_scale = self.y_scale - self.elipse_ratio
+        if self.elipse_vertical == True:
+            self.x_scale = self.x_scale - self.elipse_ratio
+            self.y_scale = self.y_scale + self.elipse_ratio
+
+        self.clamp_percentage = .9
 
 
         self.logger.debug('Cable Hole Witdh: %f', self.parameters.cable_hole_width)
@@ -59,36 +77,55 @@ class Cable():
     def holder_full(self):
 
         cable_hole_plate_width = self.parameters.cable_hole_width + (self.stop_plate_overhang * 2)
-        cable_hole_plate_height = self.parameters.cable_hole_height# + (self.stop_plate_overhang * 2)
+        # cable_hole_plate_height = self.parameters.cable_hole_height# + (self.stop_plate_overhang * 2)
         
-        holder = cube([cable_hole_plate_width, cable_hole_plate_height, self.stop_plate_thickness], center = True)
+        holder = cube([cable_hole_plate_width, self.cable_holder_height, self.stop_plate_thickness], center = True)
 
         clip_part = self.clip()
-
-        clip_part = right((self.parameters.cable_hole_width / 2) - self.clip_arm_thickness) (clip_part)
-
+        clip_part = right((self.parameters.cable_hole_width / 2) - self.clip_arm_thickness - (self.cable_hole_holder_offset / 2)) (clip_part)
         clip_part += mirror([1, 0, 0]) ( clip_part )
 
         holder += clip_part
 
-        inner_block_width = self.parameters.cable_hole_width - (self.inner_block_clip_offset * 2) - (self.clip_arm_thickness * 2) 
-
+        # Add block that fills the width of the wall for more support
         holder += up((self.parameters.case_wall_thickness / 2) + (self.stop_plate_thickness / 2)) ( 
-            cube([inner_block_width, self.cable_holder_height, self.parameters.case_wall_thickness], center = True)
+            cube([self.inner_block_width, self.cable_holder_height, self.parameters.case_wall_thickness], center = True)
         )
 
-        hole = scale([.95, 1.05, 1.0]) ( 
-            cylinder(
-                r = self.parameters.cable_diameter / 2, 
-                h = self.parameters.case_wall_thickness * 4, 
-                center = True
-            )
-        )
 
-        holder -= hole
+        holder -= self.holder_hole(include_slot = True)
 
         return holder
 
+
+
+    def holder_hole(self, include_slot = False):
+        hole = cylinder(
+            r = self.parameters.cable_diameter / 2, 
+            h = self.parameters.case_wall_thickness * 4, 
+            center = True
+        )
+
+        
+        hole = scale([self.x_scale, self.y_scale, 1.0]) ( hole )
+
+        if include_slot == True:
+            slot = forward(self.parameters.cable_diameter * 2, ) ( 
+                cube(
+                    [
+                        self.parameters.cable_diameter, 
+                        self.parameters.cable_diameter * 4, 
+                        self.parameters.case_wall_thickness * 4
+                    ], 
+                    center = True
+                )
+            )
+
+            slot = scale([self.x_scale, 1, 1]) ( slot )
+            
+            hole += slot
+        
+        return hole
 
 
     def clip(self):
@@ -112,39 +149,73 @@ class Cable():
         return solid
 
 
-    def holder_side(self, side):
+    
+    def holder_main(self):
 
-        diff_block = cube(
-            [
-                self.parameters.cable_hole_width * 2, 
-                self.cable_holder_height * 2, 
-                (self.parameters.case_wall_thickness + self.clip_long_edge) * 2
-            ], 
-            center = True
+        holder_main_body = self.holder_full()
+
+        clamp_remove_block_height = self.cable_holder_height / 4
+
+        clamp_remove_block = forward((self.cable_holder_height / 2) - (clamp_remove_block_height / 2)) ( 
+            cube([self.inner_block_width * self.clamp_percentage, clamp_remove_block_height, self.parameters.case_wall_thickness * 4], center = True) 
         )
 
-        key_block = left((self.parameters.cable_diameter / 4)) ( cube(
-            [
-                (self.parameters.cable_diameter / 2), 
-                (self.parameters.cable_diameter * 2), 
-                (self.parameters.case_wall_thickness + self.clip_long_edge) * 2
-            ], 
-            center = True
-        ))
+        holder_main_body -= clamp_remove_block
 
-        if side == 'right':
-            diff_block = left((self.parameters.cable_hole_width) - self.kerf + (self.parameters.cable_diameter / 4)) (diff_block)
-            diff_block +=  resize([0, (self.parameters.cable_diameter * 2) + (self.kerf *2), 0], auto = [False, True, True]) ( right(self.kerf) ( key_block ) )
-            # diff_block += right(self.kerf) ( key_block )
-        elif side == 'left':
-            diff_block = right((self.parameters.cable_hole_width) - self.kerf - (self.parameters.cable_diameter / 4)) (diff_block)
-            diff_block -= key_block
+        return holder_main_body
 
-        return self.holder_full() - diff_block
+
+
+    def holder_clamp(self):
+
+        clamp_block_height = self.cable_holder_height / 4
+        clamp_block_width = (self.inner_block_width * self.clamp_percentage) - (self.kerf * 2)
+
+        clamp_depth = self.parameters.case_wall_thickness + (self.stop_plate_thickness * 3)
+
+        clamp_block = forward((self.cable_holder_height / 2) - (clamp_block_height / 2)) ( 
+            cube([clamp_block_width - .1, clamp_block_height, clamp_depth], center = True) 
+        )
+
+        slot = forward(self.cable_holder_height / 4) ( 
+            cube(
+                [
+                    self.parameters.cable_diameter - .1, 
+                    self.cable_holder_height / 2, 
+                    clamp_depth
+                ], 
+                center = True
+            )
+        )
+
+        clamp_block += scale([self.x_scale, 1, 1]) ( slot )
+
+        clamp_block = up((self.parameters.case_wall_thickness / 2)) ( clamp_block )
+
+        surround_block = forward(self.cable_holder_height / 4) ( 
+            cube(
+                [
+                    clamp_block_width - .1, 
+                    self.cable_holder_height / 2, 
+                    self.stop_plate_thickness - self.kerf * 2
+                ], 
+                center = True
+            )
+        )
+
+        clamp_block += up((clamp_depth / 2) + self.stop_plate_thickness + self.kerf) ( surround_block )
+
+        clamp_block += down(self.stop_plate_thickness + self.kerf) ( surround_block )
+
+        clamp_block -= back(self.kerf ) ( self.holder_hole() )
+
+        return clamp_block
+
+
 
     def holder_all(self):
 
-        return self.holder_side('right') + up(0) ( self.holder_side('left') )
+        return self.holder_main() + up(0) ( self.holder_clamp() )
 
 
     def get_cable_hole(self):
