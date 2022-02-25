@@ -19,16 +19,16 @@ class RotationCollection:
 
         if not self.logger.hasHandlers():
         # create console handler and set level to debug
-            ch = logging.StreamHandler()
-            ch.setLevel(logging.INFO)
+            console_handler = logging.StreamHandler()
+            console_handler.setLevel(logging.INFO)
 
             # create formatter
             formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
 
-            # add formatter to ch
-            ch.setFormatter(formatter)
+            # add formatter to console_handler
+            console_handler.setFormatter(formatter)
 
-            self.logger.addHandler(ch)
+            self.logger.addHandler(console_handler)
 
         self.rotation_collection = {}
        

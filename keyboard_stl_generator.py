@@ -27,16 +27,34 @@ logger = logging.getLogger('generator')
 logger.setLevel(logging.INFO)
 
 # create console handler and set level to info
-ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO)
 
 # create formatter
 formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
 
-# add formatter to ch
-ch.setFormatter(formatter)
+# add formatter to console_handler
+console_handler.setFormatter(formatter)
 
-logger.addHandler(ch)
+logger.addHandler(console_handler)
+
+
+
+script_location = Path(os.path.dirname(os.path.realpath(__file__)))
+log_file_name = 'log.txt'
+log_file_path = script_location / log_file_name
+
+# create file handler and set level to info
+file_handler = logging.FileHandler(log_file_path, mode = 'w')
+file_handler.setLevel(logging.DEBUG)
+
+# create formatter
+formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+
+# add formatter to file_handler
+file_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
 
 
 def CheckExt(choices):
@@ -127,7 +145,15 @@ def main():
     json_key_pattern = '([{,])([xywha1]+):'
     json_key_replace = '\\1"\\2":'
 
-    f = open(input_file_path)
+    try:
+        f = open(input_file_path, encoding="utf-8")
+    except:
+        logger.info('Failed to open file with utf-8 encoding specified. Try opening without specifying an encoding')
+        try:
+            f = open(input_file_path)
+        except:
+            logger.error('Failed to open file both spefifying utf-8 andcoding and not specifying any encodeing. Exiting')
+            exit(1)
 
     keyboard_layout = f.read()
 

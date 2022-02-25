@@ -1,5 +1,6 @@
 import logging
 import math
+from pathlib import PurePath
 
 from switch_config import SwitchConfig
 from cell import Cell
@@ -8,23 +9,37 @@ from cell import Cell
 
 class Parameters():
 
-    def __init__(self, parameter_dict: dict = None):
+    def __init__(self, parameter_dict: dict = None, log_file_path: PurePath = None):
+
+        self.log_file_path = log_file_path
 
         self.logger = logging.getLogger('Parameters')
         self.logger.setLevel(logging.INFO)
 
         if not self.logger.hasHandlers():
         # create console handler and set level to debug
-            ch = logging.StreamHandler()
-            ch.setLevel(logging.INFO)
+            console_handler = logging.StreamHandler()
+            console_handler.setLevel(logging.INFO)
 
             # create formatter
             formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
 
-            # add formatter to ch
-            ch.setFormatter(formatter)
+            # add formatter to console_handler
+            console_handler.setFormatter(formatter)
 
-            self.logger.addHandler(ch)
+            self.logger.addHandler(console_handler)
+
+            # create file handler and set level to info
+            file_handler = logging.FileHandler(self.log_file_path, mode = 'w')
+            file_handler.setLevel(logging.DEBUG)
+
+            # create formatter
+            formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+
+            # add formatter to file_handler
+            file_handler.setFormatter(formatter)
+
+            self.logger.addHandler(file_handler)
 
         self.parameter_dict = parameter_dict
 
@@ -266,3 +281,4 @@ class Parameters():
         if parameter_error == True:
             print('ERROR:', error_message)
             exit(1)
+
