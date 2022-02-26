@@ -10,22 +10,8 @@ class Support(Cell):
     def __init__(self, x, y, w, h, plate_thickness, support_bar_height, support_bar_width, rotation = 0.0,  r_x_offset = 0.0, r_y_offset = 0.0, set_to_origin = True, cell_value = ''):
         super().__init__(x, y, w, h, rotation,  r_x_offset, r_y_offset, cell_value = cell_value)
 
-        self.logger = logging.getLogger('Support')
-        self.logger.setLevel(logging.INFO)
-
-        if not self.logger.hasHandlers():
-        # create console handler and set level to debug
-            console_handler = logging.StreamHandler()
-            console_handler.setLevel(logging.INFO)
-
-            # create formatter
-            formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
-
-            # add formatter to console_handler
-            console_handler.setFormatter(formatter)
-
-            self.logger.addHandler(console_handler)
-
+        self.logger = logging.getLogger('generator.' + __name__)
+        
         self.plate_thickness = plate_thickness
         self.set_to_origin = set_to_origin
         self.support_bar_height = support_bar_height

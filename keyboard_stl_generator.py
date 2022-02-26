@@ -24,11 +24,11 @@ from cable import Cable
 graph = False
 
 logger = logging.getLogger('generator')
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 # create console handler and set level to info
 console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.INFO)
+console_handler.setLevel(logging.WARN)
 
 # create formatter
 formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
@@ -48,14 +48,13 @@ log_file_path = script_location / log_file_name
 file_handler = logging.FileHandler(log_file_path, mode = 'w')
 file_handler.setLevel(logging.DEBUG)
 
-# create formatter
-formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
-
 # add formatter to file_handler
 file_handler.setFormatter(formatter)
 
 logger.addHandler(file_handler)
 
+
+logger.info(__name__)
 
 def CheckExt(choices):
     class Act(argparse.Action):
@@ -88,7 +87,7 @@ def main():
     rendered_object_dict = {}
 
     args = parser.parse_args()
-    # logger.debug(vars(args))
+    logger.debug(vars(args))
 
     # Create Path object from input file argument
     input_file_path = Path(args.input_file)
@@ -174,7 +173,7 @@ def main():
             logger.error('Failed to parse json after attempt at correction.')
             raise
 
-    logger.debug('keyboard_layout_dict:', keyboard_layout_dict)
+    logger.debug('keyboard_layout_dict: %s', str(keyboard_layout_dict))
 
     
     # Read parameter file
@@ -285,6 +284,7 @@ def main():
                 logger.info('Generate scad file with name %s', scad_file_name)
                 # Generate SCAD file from assembly
                 scad_render_to_file(rendered_object_dict[section][part_name], scad_file_name, file_header=f'$fn = {FRAGMENTS};')
+                print('Generated scad file with name', scad_file_name)
                 
                 # Render STL if option is chosen
                 if args.render:
@@ -303,6 +303,7 @@ def main():
         stl_file_name = stl_folder_path / (layout_name + '_cable_holder_' + side + stl_postfix)
         logger.info('Generate scad file with name %s', scad_file_name)
         scad_render_to_file(cable.holder_main(), scad_file_name, file_header=f'$fn = {FRAGMENTS};')
+        print('Generated scad file with name', scad_file_name)
         if args.render:
             openscad_command_list = ['openscad', '-o', '%s' % (stl_file_name), '%s' % (scad_file_name)]
             subprocess_dict[stl_file_name] = subprocess.Popen(openscad_command_list)
@@ -313,6 +314,7 @@ def main():
         stl_file_name = stl_folder_path / (layout_name + '_cable_holder_' + side + stl_postfix)
         logger.info('Generate scad file with name %s', scad_file_name)
         scad_render_to_file(cable.holder_clamp(), scad_file_name, file_header=f'$fn = {FRAGMENTS};')
+        print('Generated scad file with name', scad_file_name)
         if args.render:
             openscad_command_list = ['openscad', '-o', '%s' % (stl_file_name), '%s' % (scad_file_name)]
             subprocess_dict[stl_file_name] = subprocess.Popen(openscad_command_list)
@@ -321,6 +323,7 @@ def main():
         stl_file_name = scad_folder_path / (layout_name + '_cable_holder_all' + stl_postfix)
         logger.info('Generate scad file with name %s', scad_file_name)
         scad_render_to_file(cable.holder_all(), scad_file_name, file_header=f'$fn = {FRAGMENTS};')
+        print('Generated scad file with name', scad_file_name)
         if args.render:
             openscad_command_list = ['openscad', '-o', '%s' % (stl_file_name), '%s' % (scad_file_name)]
             subprocess_dict[stl_file_name] = subprocess.Popen(openscad_command_list)
@@ -343,10 +346,10 @@ def main():
                     try:
                         rcode = p.wait(.1)
                     except subprocess.TimeoutExpired as err:
-                        logger.debug('Wait Timeout: %s', str(err))
                         running = True
                     if rcode is not None:
                         logger.info('Render Complete: file: %s', stl_file_name)
+                        print('Render Complete: file:', stl_file_name)
                         subprocess_dict[stl_file_name] = None
             # time.sleep(1)
 

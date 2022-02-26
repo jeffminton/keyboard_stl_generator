@@ -31,21 +31,7 @@ class SwitchConfig():
 
     def __init__(self, kerf = 0.0,  switch_type = 'mx_openable', stabilizer_type = 'cherry_costar', custom_shape = False, custum_shape_points = None, custom_shape_path = None):
 
-        self.logger = logging.getLogger('SwitchConfig')
-        self.logger.setLevel(logging.INFO)
-
-        if not self.logger.hasHandlers():
-        # create console handler and set level to debug
-            console_handler = logging.StreamHandler()
-            console_handler.setLevel(logging.INFO)
-
-            # create formatter
-            formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
-
-            # add formatter to console_handler
-            console_handler.setFormatter(formatter)
-
-            self.logger.addHandler(console_handler)
+        self.logger = logging.getLogger('generator.' + __name__)
 
         self.kerf = kerf
         self.pos_kerf = self.kerf

@@ -15,22 +15,7 @@ from cell import Cell
 class ItemCollection:
     def __init__(self, rotation = 0.0):
         
-        self.logger = logging.getLogger('ItemCollection')
-        self.logger.setLevel(logging.INFO)
-
-        if not self.logger.hasHandlers():
-        # create console handler and set level to debug
-            console_handler = logging.StreamHandler()
-            console_handler.setLevel(logging.INFO)
-
-            # create formatter
-            formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
-
-            # add formatter to console_handler
-            console_handler.setFormatter(formatter)
-
-            self.logger.addHandler(console_handler)
-
+        self.logger = logging.getLogger('generator.' + __name__)
 
         self.collection = {}
 

@@ -15,23 +15,9 @@ class Body():
 
     def __init__(self, parameters: Parameters = Parameters()):
 
-        self.logger = logging.getLogger('Body')
-        self.logger.setLevel(logging.INFO)
-
-        if not self.logger.hasHandlers():
-        # create console handler and set level to debug
-            console_handler = logging.StreamHandler()
-            console_handler.setLevel(logging.INFO)
-
-            # create formatter
-            formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
-
-            # add formatter to console_handler
-            console_handler.setFormatter(formatter)
-
-            self.logger.addHandler(console_handler)
-
         self.parameters = parameters
+
+        self.logger = logging.getLogger('generator.' + __name__)
 
         self.x_build_size = self.parameters.x_build_size
         self.y_build_size = self.parameters.y_build_size

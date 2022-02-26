@@ -78,21 +78,7 @@ class Switch(Cell):
     def __init__(self, x, y, w, h, rotation = 0.0,  r_x_offset = 0.0, r_y_offset = 0.0, cell_value = '', switch_config = None, parameters = None):
         super().__init__(x, y, w, h, rotation,  r_x_offset, r_y_offset, cell_value = cell_value)
 
-        self.logger = logging.getLogger('Switch')
-        self.logger.setLevel(logging.INFO)
-
-        if not self.logger.hasHandlers():
-        # create console handler and set level to debug
-            console_handler = logging.StreamHandler()
-            console_handler.setLevel(logging.INFO)
-
-            # create formatter
-            formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
-
-            # add formatter to console_handler
-            console_handler.setFormatter(formatter)
-
-            self.logger.addHandler(console_handler)
+        self.logger = logging.getLogger('generator.' + __name__)
 
         self.switch_config = switch_config
         if self.switch_config is None:
