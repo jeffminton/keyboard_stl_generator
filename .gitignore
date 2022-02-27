@@ -132,3 +132,6 @@ dmypy.json
 
 *.scad
 *.stl
+
+
+log.txt
