@@ -10,7 +10,7 @@ class SupportCutout(Cell):
     def __init__(self, x, y, w, h, plate_thickness, support_bar_height, support_bar_width, rotation = 0.0,  r_x_offset = 0.0, r_y_offset = 0.0, set_to_origin = False, cell_value = ''):
         super().__init__(x, y, w, h, rotation,  r_x_offset, r_y_offset, cell_value = cell_value)
 
-        self.logger = logging.getLogger('generator.' + __name__)
+        self.logger = logging.getLogger().getChild(__name__)
 
         self.plate_thickness = plate_thickness
         self.set_to_origin = set_to_origin

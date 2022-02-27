@@ -3,16 +3,13 @@
 import argparse
 from asyncio import subprocess
 import json
-import math
+# import math
 import re
 import logging
 import os
 # import os.path
 import subprocess
-import time
-
-# import graphviz
-
+# import time
 
 from solid import *
 from solid.utils import *
@@ -21,41 +18,49 @@ from parameters import Parameters
 from keyboard import Keyboard
 from cable import Cable
 
-graph = False
+# Set logger level variables
+console_logging_level = logging.WARN
+file_logging_level = logging.DEBUG
 
-logger = logging.getLogger('generator')
+
+# Get root logger and set main logger level to DEBUG
+logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
-# create console handler and set level to info
+
+# Create formatters
+console_formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+file_formatter = logging.Formatter('%(asctime)s - %(msecs)d - %(name)s - %(levelname)s - %(message)s')
+
+
+# Create console handler and set level to info
 console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.WARN)
+console_handler.setLevel(console_logging_level)
 
-# create formatter
-formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+# Add formatter to console_handler
+console_handler.setFormatter(console_formatter)
 
-# add formatter to console_handler
-console_handler.setFormatter(formatter)
-
+# Add console handler to logger
 logger.addHandler(console_handler)
 
 
-
+# Get file info that will be used to creat log file
 script_location = Path(os.path.dirname(os.path.realpath(__file__)))
 log_file_name = 'log.txt'
 log_file_path = script_location / log_file_name
 
-# create file handler and set level to info
+# Create file handler and set level to info
 file_handler = logging.FileHandler(log_file_path, mode = 'w')
-file_handler.setLevel(logging.DEBUG)
+file_handler.setLevel(file_logging_level)
 
-# add formatter to file_handler
-file_handler.setFormatter(formatter)
+# Add formatter to file_handler
+file_handler.setFormatter(file_formatter)
 
+# Add file handler to logger
 logger.addHandler(file_handler)
 
 
-logger.info(__name__)
-
+# Helper for parser to wnsure filename argument has to correct extension
 def CheckExt(choices):
     class Act(argparse.Action):
         def __call__(self,parser,namespace,fname,option_string=None):
@@ -83,9 +88,7 @@ def main():
     parser.add_argument('-r', '--render', help = 'Render an STL from the generated scad file', default = False, action = 'store_true')
     parser.add_argument('--switch-type-in-filename', help = 'Add the switch type name and stabilizer type name to the filname', default = False, action = 'store_true')
 
-    
-    rendered_object_dict = {}
-
+    # Parse command line arguments
     args = parser.parse_args()
     logger.debug(vars(args))
 
@@ -105,8 +108,8 @@ def main():
     output_base_folder = base_path / layout_name
     scad_folder_path = output_base_folder / 'scad'
     stl_folder_path = output_base_folder / 'stl'
-    # graph_folder_path = output_base_folder / 'graph'
 
+    # Ensure all outpur folders exists
     if output_base_folder.is_dir() == False:
         output_base_folder.mkdir()
 
@@ -116,24 +119,13 @@ def main():
     if stl_folder_path.is_dir() == False:
         stl_folder_path.mkdir()
 
-    # if graph == True and graph_folder_path.is_dir() == False:
-    #     graph_folder_path.mkdir()
-
     logger.debug('layout_name: %s', str(layout_name))
     logger.debug('base_path: %s', str(base_path))
     logger.debug('file_name_only: %s', str(file_name_only))
     
-
+    # define output file extensions
     scad_postfix = '.scad'
     stl_postfix  = '.stl'
-    gv_postfix  = '.gv'
-
-    section_postfix = ''
-    if args.section > -1:
-        section_postfix = '_section_%d' % (args.section)
-
-    scad_file_name = scad_folder_path / (layout_name + section_postfix + scad_postfix)
-    stl_file_name = stl_folder_path / (layout_name + section_postfix + stl_postfix)
 
     logger.debug('Read layout from file %s', input_file_path)
 
@@ -141,47 +133,77 @@ def main():
     FRAGMENTS = args.fragments
     logger.debug('\tFragments: %d', FRAGMENTS)
 
+    # Pattern and Replacement strings to be used when trying to turn keyboard-layout-editor raw output into valid JSON
     json_key_pattern = '([{,])([xywha1]+):'
     json_key_replace = '\\1"\\2":'
 
+    # Open JSON layout file
     try:
+        # Try with utf-8 encoding specified
         f = open(input_file_path, encoding="utf-8")
     except:
-        logger.info('Failed to open file with utf-8 encoding specified. Try opening without specifying an encoding')
+        # Failed to open
+        logger.info('Failed to open layout file with utf-8 encoding specified. Try opening without specifying an encoding')
         try:
+            # Try opening with no encoding spcificed
             f = open(input_file_path)
         except:
-            logger.error('Failed to open file both spefifying utf-8 andcoding and not specifying any encodeing. Exiting')
+            logger.error('Failed to open layout file both spefifying utf-8 andcoding and not specifying any encodeing. Exiting')
             exit(1)
 
-    keyboard_layout = f.read()
+    try:
+        keyboard_layout = f.read()
+    except UnicodeDecodeError:
+        logger.error('Unable to decode layout file. Please provide utf-8 encoded files')
+        exit(-1)
 
     keyboard_layout_dict = None
 
     # Load keyboard layout dictionary
     try:
+        # Attempt to parse to provided JSON string
         keyboard_layout_dict = json.loads(keyboard_layout)
         logger.debug('Valid Json Parsed')
     except:
+        # Failed to parse the JSON test.
+        # This most likely means that the keybaord-layout-editor raw output was provided
+        # Attempt to modify that string to make it valid JSON
         keyboard_layout = '[%s]' % (keyboard_layout)
-        json_replace_match = re.search(json_key_pattern, keyboard_layout)
         keyboard_layout = re.sub(json_key_pattern, json_key_replace, keyboard_layout)
         try:
             keyboard_layout_dict = json.loads(keyboard_layout)
-            logger.info('Initial Json Invalid. Json modified and parsed')
+            logger.info('Initial layout Json Invalid. Json modified and parsed')
         except:
-            logger.error('Failed to parse json after attempt at correction.')
+            logger.error('Failed to parse layout json after attempt at correction.')
             raise
 
     logger.debug('keyboard_layout_dict: %s', str(keyboard_layout_dict))
 
-    
+
     # Read parameter file
     parameter_dict = None
     if args.parameter_file is not None:
-        f = open(args.parameter_file)
+        # Open JSON parameter file
+        try:
+            # Try with utf-8 encoding specified
+            f = open(args.parameter_file, encoding="utf-8")
+        except:
+            # Failed to open
+            logger.info('Failed to open parameter file with utf-8 encoding specified. Try opening without specifying an encoding')
+            try:
+                # Try opening with no encoding spcificed
+                f = open(args.parameter_fil)
+            except:
+                logger.error('Failed to open parameter file both spefifying utf-8 andcoding and not specifying any encodeing. Exiting')
+                exit(1)
+        
 
-        parameter_file_text = f.read()
+        try:
+             parameter_file_text = f.read()
+        except UnicodeDecodeError:
+            logger.error('Unable to decode parameter file. Please provide utf-8 encoded files')
+            exit(-1)
+       
 
         try:
             parameter_dict = json.loads(parameter_file_text)
@@ -196,46 +218,84 @@ def main():
     # Create Keyboard instance
     keyboard = Keyboard(parameters)
 
-    if args.section > -1:
-        keyboard.set_section(args.section)
-
+    # Set keyboard desired section if a section is specified
+    # if args.section > -1:
+        
     # Process the keyboard layout object
     keyboard.process_keyboard_layout(keyboard_layout_dict)
 
     logger.debug('kerf: %f', keyboard.kerf)
 
+    # Dictionary of SolidPython solid objects that need to be rendered to SCAD and to STL if desired
+    solid_object_dict = {}
+
+    # Create objects for each of the generated sections
     if args.all_sections == True:
+        # Iterate over all sections generated and add all sections to solid_object_dict
         for section in range(keyboard.get_top_section_count()):
+            # Set current section for generator
             keyboard.set_section(section)
-            rendered_object_dict[section] = {}
-            rendered_object_dict[section]['top'] = keyboard.get_assembly(top = True)
+
+            # Create dict for section
+            solid_object_dict[section] = {}
+
+            # Add top assembly, plate, and all assembly to section dict
+            solid_object_dict[section]['top'] = keyboard.get_assembly(top = True)
+            solid_object_dict[section]['all'] = keyboard.get_assembly(all = True)
+            solid_object_dict[section]['plate'] = keyboard.get_assembly(plate_only = True)
+
+            # If there is a bottom section for the current section add it to section dict
             if section < keyboard.get_bottom_section_count():
-                rendered_object_dict[section]['bottom'] = keyboard.get_assembly(bottom = True)
-            rendered_object_dict[section]['all'] = keyboard.get_assembly(all = True)
-            rendered_object_dict[section]['plate'] = keyboard.get_assembly(plate_only = True)
+                solid_object_dict[section]['bottom'] = keyboard.get_assembly(bottom = True)
+            
+    # Create exploded object
     elif args.exploded == True:
-        rendered_object_dict[-1] = {}
-        rendered_object_dict[-1]['top'] = union()
-        rendered_object_dict[-1]['bottom'] = union()
+        solid_object_dict[-1] = {}
+        solid_object_dict[-1]['top'] = union()
+        solid_object_dict[-1]['bottom'] = union()
         for section in range(keyboard.get_top_section_count()):
             keyboard.set_section(section)
-            rendered_object_dict[-1]['top'] += up(5 * section) ( right(10 * section) ( keyboard.get_assembly(top = True) ) )
+            solid_object_dict[-1]['top'] += up(5 * section) ( right(10 * section) ( keyboard.get_assembly(top = True) ) )
             if section < keyboard.get_bottom_section_count():
-                rendered_object_dict[-1]['bottom'] += up(5 * section) ( right(10 * section) ( keyboard.get_assembly(bottom = True) ) )
+                solid_object_dict[-1]['bottom'] += up(5 * section) ( right(10 * section) ( keyboard.get_assembly(bottom = True) ) )
+    
+
+    # Create objects for a specified section
     elif args.section > -1:
-        # Get the full keyboard assembly
-        rendered_object_dict[args.section] = {}
-        rendered_object_dict[args.section]['top'] = keyboard.get_assembly(top = True)
-        rendered_object_dict[args.section]['bottom'] = keyboard.get_assembly(bottom = True)
-        rendered_object_dict[args.section]['all'] = keyboard.get_assembly(all = True)
-        rendered_object_dict[args.section]['plate'] = keyboard.get_assembly(plate_only = True)
-    elif args.section == -1:
-        rendered_object_dict[args.section] = {}
-        rendered_object_dict[args.section]['top'] = keyboard.get_assembly(top = True)
-        rendered_object_dict[args.section]['bottom'] = keyboard.get_assembly(bottom = True)
-        rendered_object_dict[args.section]['all'] = keyboard.get_assembly(all = True)
-        rendered_object_dict[args.section]['plate'] = keyboard.get_assembly(plate_only = True)
-        
+        # Set desired section to create
+        keyboard.set_section(args.section)
+
+        # Create dict for section
+        solid_object_dict[args.section] = {}
+
+        # Add top assembly, plate, and all assembly to section dict
+        solid_object_dict[args.section]['top'] = keyboard.get_assembly(top = True)
+        solid_object_dict[args.section]['all'] = keyboard.get_assembly(all = True)
+        solid_object_dict[args.section]['plate'] = keyboard.get_assembly(plate_only = True)
+
+        # If there is a bottom section for the current section add it to section dict
+        if args.section < keyboard.get_bottom_section_count():
+            solid_object_dict[args.section]['bottom'] = keyboard.get_assembly(bottom = True)
+
+    # Create an objects that are not split into sections. No other options were specified
+    else:
+        logger.debug('Create whole object. No other options specified')
+        solid_object_dict['all'] = {}
+        solid_object_dict['all']['top'] = keyboard.get_assembly(top = True)
+        solid_object_dict['all']['bottom'] = keyboard.get_assembly(bottom = True)
+        solid_object_dict['all']['all'] = keyboard.get_assembly(all = True)
+        solid_object_dict['all']['plate'] = keyboard.get_assembly(plate_only = True)
+    
+    # Add global items that are not dependant on the sctions or parts of the item to build
+    solid_object_dict['global'] = {}
+
+    # Generate a strain relief piece for the cable hole
+    if parameters.cable_hole == True:
+        cable = Cable(parameters)
+        solid_object_dict['global']['cable_holder_main'] = cable.holder_main()
+        solid_object_dict['global']['cable_holder_clamp'] = cable.holder_clamp()
+        solid_object_dict['global']['cable_holder_all'] = cable.holder_all()
+
     logger.info('Case Height: %f, Case Width: %f', parameters.real_case_height, parameters.real_case_width)
     logger.info('Sections In Top: %d', keyboard.get_top_section_count())
     logger.info('Sections In Bottom: %d', keyboard.get_bottom_section_count())
@@ -254,36 +314,36 @@ def main():
     switch_type_for_filename = ''
     stab_type_for_filename = ''
 
-    if args.switch_type_in_filename == True:
-        switch_type_for_filename = '_' + parameters.switch_type
-        stab_type_for_filename = '_' + parameters.stabilizer_type
+    for section in solid_object_dict.keys():
 
-    # if graph == True:
-    #     gv_file_name = graph_folder_path / (layout_name + gv_postfix)
-    #     logger.info('Global: %s', gv_file_name)
-    #     keyboard.switch_collection.neighbor_check('global', gv_file_name)
+        if args.switch_type_in_filename == True:
+            switch_type_for_filename = '_' + parameters.switch_type
+            stab_type_for_filename = '_' + parameters.stabilizer_type
 
-    for section in rendered_object_dict.keys():
         section_postfix = ''
-        if section > -1:
-            section_postfix = '_section_%d' % (section)
 
+        # Creating global items that have no relaton to switch type
+        if isinstance(section, str) and section == 'global':
+            switch_type_for_filename = ''
+            stab_type_for_filename = ''
+        
+        # If the current object dict section is an int greater than -1 add the section number to the filename
+        if isinstance(section, int) and section > -1:
+            section_postfix = '_section_%d' % (section)
+        
         if args.exploded == True:
             section_postfix = '_exploded'
 
-        # if graph == True and section_postfix != '':
-        #     gv_file_name = graph_folder_path / (layout_name + section_postfix + gv_postfix)
-        #     logger.info('Local: %s', gv_file_name)
-        #     keyboard.switch_section_list[section].neighbor_check('local', gv_file_name)
-
-        for part_name in rendered_object_dict[section].keys():
+        for part_name in solid_object_dict[section].keys():
             part_name_formatted = '_' + part_name
+
             scad_file_name = scad_folder_path / (layout_name + section_postfix + part_name_formatted + switch_type_for_filename + stab_type_for_filename + scad_postfix)
             stl_file_name = stl_folder_path / (layout_name + section_postfix + part_name_formatted + switch_type_for_filename + stab_type_for_filename + stl_postfix)
-            if rendered_object_dict[section][part_name] is not None:
+
+            if solid_object_dict[section][part_name] is not None:
                 logger.info('Generate scad file with name %s', scad_file_name)
                 # Generate SCAD file from assembly
-                scad_render_to_file(rendered_object_dict[section][part_name], scad_file_name, file_header=f'$fn = {FRAGMENTS};')
+                scad_render_to_file(solid_object_dict[section][part_name], scad_file_name, file_header=f'$fn = {FRAGMENTS};')
                 print('Generated scad file with name', scad_file_name)
                 
                 # Render STL if option is chosen
@@ -291,42 +351,41 @@ def main():
                     logger.debug('Render STL from SCAD')
                     logger.info('Generate stl file with name %s from %s', stl_file_name, scad_file_name)
 
-
                     openscad_command_list = ['openscad', '-o', '%s' % (stl_file_name), '%s' % (scad_file_name)]
                     subprocess_dict[stl_file_name] = subprocess.Popen(openscad_command_list)
 
-    if parameters.cable_hole == True:
-        cable = Cable(parameters)
+    # if parameters.cable_hole == True:
+    #     cable = Cable(parameters)
 
-        side = 'main'
-        scad_file_name = scad_folder_path / (layout_name + '_cable_holder_' + side + scad_postfix)
-        stl_file_name = stl_folder_path / (layout_name + '_cable_holder_' + side + stl_postfix)
-        logger.info('Generate scad file with name %s', scad_file_name)
-        scad_render_to_file(cable.holder_main(), scad_file_name, file_header=f'$fn = {FRAGMENTS};')
-        print('Generated scad file with name', scad_file_name)
-        if args.render:
-            openscad_command_list = ['openscad', '-o', '%s' % (stl_file_name), '%s' % (scad_file_name)]
-            subprocess_dict[stl_file_name] = subprocess.Popen(openscad_command_list)
+    #     side = 'main'
+    #     scad_file_name = scad_folder_path / (layout_name + '_cable_holder_' + side + scad_postfix)
+    #     stl_file_name = stl_folder_path / (layout_name + '_cable_holder_' + side + stl_postfix)
+    #     logger.info('Generate scad file with name %s', scad_file_name)
+    #     scad_render_to_file(cable.holder_main(), scad_file_name, file_header=f'$fn = {FRAGMENTS};')
+    #     print('Generated scad file with name', scad_file_name)
+    #     if args.render:
+    #         openscad_command_list = ['openscad', '-o', '%s' % (stl_file_name), '%s' % (scad_file_name)]
+    #         subprocess_dict[stl_file_name] = subprocess.Popen(openscad_command_list)
 
 
-        side = 'clamp'
-        scad_file_name = scad_folder_path / (layout_name + '_cable_holder_' + side + scad_postfix)
-        stl_file_name = stl_folder_path / (layout_name + '_cable_holder_' + side + stl_postfix)
-        logger.info('Generate scad file with name %s', scad_file_name)
-        scad_render_to_file(cable.holder_clamp(), scad_file_name, file_header=f'$fn = {FRAGMENTS};')
-        print('Generated scad file with name', scad_file_name)
-        if args.render:
-            openscad_command_list = ['openscad', '-o', '%s' % (stl_file_name), '%s' % (scad_file_name)]
-            subprocess_dict[stl_file_name] = subprocess.Popen(openscad_command_list)
+    #     side = 'clamp'
+    #     scad_file_name = scad_folder_path / (layout_name + '_cable_holder_' + side + scad_postfix)
+    #     stl_file_name = stl_folder_path / (layout_name + '_cable_holder_' + side + stl_postfix)
+    #     logger.info('Generate scad file with name %s', scad_file_name)
+    #     scad_render_to_file(cable.holder_clamp(), scad_file_name, file_header=f'$fn = {FRAGMENTS};')
+    #     print('Generated scad file with name', scad_file_name)
+    #     if args.render:
+    #         openscad_command_list = ['openscad', '-o', '%s' % (stl_file_name), '%s' % (scad_file_name)]
+    #         subprocess_dict[stl_file_name] = subprocess.Popen(openscad_command_list)
 
-        scad_file_name = scad_folder_path / (layout_name + '_cable_holder_all' + scad_postfix)
-        stl_file_name = scad_folder_path / (layout_name + '_cable_holder_all' + stl_postfix)
-        logger.info('Generate scad file with name %s', scad_file_name)
-        scad_render_to_file(cable.holder_all(), scad_file_name, file_header=f'$fn = {FRAGMENTS};')
-        print('Generated scad file with name', scad_file_name)
-        if args.render:
-            openscad_command_list = ['openscad', '-o', '%s' % (stl_file_name), '%s' % (scad_file_name)]
-            subprocess_dict[stl_file_name] = subprocess.Popen(openscad_command_list)
+    #     scad_file_name = scad_folder_path / (layout_name + '_cable_holder_all' + scad_postfix)
+    #     stl_file_name = scad_folder_path / (layout_name + '_cable_holder_all' + stl_postfix)
+    #     logger.info('Generate scad file with name %s', scad_file_name)
+    #     scad_render_to_file(cable.holder_all(), scad_file_name, file_header=f'$fn = {FRAGMENTS};')
+    #     print('Generated scad file with name', scad_file_name)
+    #     if args.render:
+    #         openscad_command_list = ['openscad', '-o', '%s' % (stl_file_name), '%s' % (scad_file_name)]
+    #         subprocess_dict[stl_file_name] = subprocess.Popen(openscad_command_list)
 
 
 

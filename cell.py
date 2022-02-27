@@ -4,6 +4,7 @@ from solid.utils import *
 import logging
 import math
 import json
+import sys
 
 
 class Cell:
@@ -35,7 +36,7 @@ class Cell:
 
     def __init__(self, x: float, y: float, w: float, h: float, rotation = 0.0,  r_x_offset = 0.0, r_y_offset = 0.0, cell_value = ''):
         
-        self.logger = logging.getLogger('generator.' + __name__)
+        self.logger = logging.getLogger().getChild(__name__)
         
         self.x = x
         self.y = y
@@ -215,7 +216,7 @@ class Cell:
         points = []
         
         for corner_name in self.corner_order:
-            # self.logger.debug(corner_name)
+            # logger.debug(corner_name)
             points_orig.append([self.rotation_info[corner_name]['rotated_x'], self.rotation_info[corner_name]['rotated_y']])
             points.append([Cell.u(self.rotation_info[corner_name]['rotated_x']), Cell.u(self.rotation_info[corner_name]['rotated_y'])])
             
@@ -224,8 +225,8 @@ class Cell:
     
     def build_rotation_info(self):
 
-        if self.cell_value in ('CC', 'DD', 'HH', 'II', 'JJ', 'LL'):
-            self.logger.debug('Build Rotation Info for key %s', str(self))
+        # if self.cell_value in ('CC', 'DD', 'HH', 'II', 'JJ', 'LL'):
+        #     logger.debug('Build Rotation Info for key %s', str(self))
 
         for corner_name in self.rotation_info.keys():
             adjacent = 0

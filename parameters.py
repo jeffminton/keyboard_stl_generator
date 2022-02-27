@@ -1,5 +1,6 @@
 import logging
 import math
+import sys
 from pathlib import PurePath
 
 from switch_config import SwitchConfig
@@ -11,7 +12,7 @@ class Parameters():
 
     def __init__(self, parameter_dict: dict = None):
 
-        self.logger = logging.getLogger('generator.' + __name__)
+        self.logger = logging.getLogger(__name__)
 
         self.parameter_dict = parameter_dict
 
@@ -25,7 +26,7 @@ class Parameters():
             'stabilizer_type': 'cherry',
 
             'custom_shape': False, 
-            'custum_shape_points': None,
+            'custom_shape_points': None,
             'custom_shape_path': None,
 
             'kerf' : 0.00,
@@ -72,8 +73,9 @@ class Parameters():
         self.switch_type = 'mx_openable'
         self.stabilizer_type = 'cherry'
 
+        # Custom Switch Cutout Attributes
         self.custom_shape = False 
-        self.custum_shape_points = None
+        self.custom_shape_points = None
         self.custom_shape_path = None
 
         self.kerf = 0.00
@@ -108,6 +110,7 @@ class Parameters():
         self.cable_hole_down_offset = 1
 
         self.switch_config = None
+        self.custom_shapes = None
 
         self.test_block = False
         self.test_block_x_start = 0
@@ -165,12 +168,14 @@ class Parameters():
 
 
     def set_dimensions(self, max_x, min_y, min_x, max_y):
+        this_function_name = sys._getframe(  ).f_code.co_name
+        logger = self.logger.getChild(this_function_name)
 
         self.max_x = max_x
         self.max_x = max_x
         self.min_y = min_y
         self.max_y = max_y
-        self.logger.debug('min_x: %f, max_x: %f, max_y: %f, min_y: %f', self.min_x, self.max_x, self.max_y, self.min_y)
+        logger.debug('min_x: %f, max_x: %f, max_y: %f, min_y: %f', self.min_x, self.max_x, self.max_y, self.min_y)
 
         # Get rhe calculated real max and y sizes of the board
         self.real_max_x = Cell.u(self.max_x)
@@ -179,13 +184,16 @@ class Parameters():
         self.real_case_width = self.real_max_x + self.left_margin + self.right_margin
         self.real_case_height = self.real_max_y + self.top_margin + self.bottom_margin
 
-        self.logger.debug('real_max_x: %d, real_max_y: %s', self.real_max_x, self.real_max_y)
+        logger.debug('real_max_x: %d, real_max_y: %s', self.real_max_x, self.real_max_y)
 
         self.update_calculated_attributes()
 
 
 
     def build_attr_from_dict(self, parameter_dict):
+        this_function_name = sys._getframe(  ).f_code.co_name
+        logger = self.logger.getChild(this_function_name)
+
         for param in parameter_dict.keys():
             ignore_deprecated = False
             value = parameter_dict[param]
@@ -200,11 +208,27 @@ class Parameters():
                     # If the new version of the parameter is in the dict then ignore the current deprecated parameter
                     ignore_deprecated = True
 
-            
+            if param == 'custom_switch':
+                if 'points' not in value.keys():
+                    raise AttributeError('A set of "points" must exist in the "custom_switch" to use a custom switch')
+                
+                self.custom_shape_points = value['points']
+
+                if 'path' in value.keys():
+                    self.custom_shape_path = value['path']
+                else:
+                    logger.warning('Custom Switch defined but no "path" list defined. Points in "ponts" list will be used in defined order')
+                
+                self.custom_shape = True
+                
+
             if ignore_deprecated == False:
                 setattr(self, param, value)
 
-        self.switch_config = SwitchConfig(kerf = self.kerf, switch_type = self.switch_type, stabilizer_type = self.stabilizer_type, custom_shape = self.custom_shape, custum_shape_points = self.custum_shape_points, custom_shape_path = self.custom_shape_path)
+            
+
+
+        self.switch_config = SwitchConfig(kerf = self.kerf, switch_type = self.switch_type, stabilizer_type = self.stabilizer_type, custom_shape = self.custom_shape, custom_shape_points = self.custom_shape_points, custom_shape_path = self.custom_shape_path)
 
         self.update_calculated_attributes()
 

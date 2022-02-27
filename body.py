@@ -1,5 +1,6 @@
 # from ast import Param
 import math
+import sys
 
 from solid import *
 from solid.utils import *
@@ -17,7 +18,7 @@ class Body():
 
         self.parameters = parameters
 
-        self.logger = logging.getLogger('generator.' + __name__)
+        self.logger = logging.getLogger().getChild(__name__)
 
         self.x_build_size = self.parameters.x_build_size
         self.y_build_size = self.parameters.y_build_size
@@ -143,12 +144,14 @@ class Body():
 
 
     def set_dimensions(self, max_x, min_y, min_x, max_y):
+        this_function_name = sys._getframe(  ).f_code.co_name
+        logger = self.logger.getChild(this_function_name)
 
         self.max_x = max_x
         self.max_x = max_x
         self.min_y = min_y
         self.max_y = max_y
-        self.logger.debug('min_x: %f, max_x: %f, max_y: %f, min_y: %f', self.min_x, self.max_x, self.max_y, self.min_y)
+        # logger.debug('min_x: %f, max_x: %f, max_y: %f, min_y: %f', self.min_x, self.max_x, self.max_y, self.min_y)
 
         # Get rhe calculated real max and y sizes of the board
         self.real_max_x = Cell.u(self.max_x)
@@ -157,7 +160,7 @@ class Body():
         self.real_case_width = self.real_max_x + self.left_margin + self.right_margin
         self.real_case_height = self.real_max_y + self.top_margin + self.bottom_margin
 
-        self.logger.debug('real_max_x: %d, real_max_y: %s', self.real_max_x, self.real_max_y)
+        logger.debug('real_max_x: %d, real_max_y: %s', self.real_max_x, self.real_max_y)
 
         self.update_calculated_attributes()
 
@@ -168,8 +171,8 @@ class Body():
             
             setattr(self, param, value)
 
-            if param == 'screw_count':
-                self.logger.debug('%s: %s, self.screw_count: %s', str(param), str(value), str(self.screw_count))
+            # if param == 'screw_count':
+            #     logger.debug('%s: %s, self.screw_count: %s', str(param), str(value), str(self.screw_count))
     
     
     def set_parameter_dict(self, parameter_dict):
@@ -178,6 +181,9 @@ class Body():
         self.update_calculated_attributes()
 
     def plate(self, case_x, case_y, pre_minkowski_thickness, corner):
+        this_function_name = sys._getframe(  ).f_code.co_name
+        logger = self.logger.getChild(this_function_name)
+
         # Get absolute value of min_y to get real y value
         max_y = abs(self.min_y)
 
@@ -187,7 +193,7 @@ class Body():
 
         plate_object = right((self.real_max_x / 2) + (self.side_margin_diff / 2)) ( back((self.real_max_y / 2) + (self.top_margin_diff / 2)) ( plate_object ) )
 
-        self.logger.debug('self.plate_supports: %s', str(self.plate_supports))
+        logger.debug('self.plate_supports: %s', str(self.plate_supports))
 
         # screw_holes = self.screw_hole_objects()
         # if screw_holes is not None:
@@ -198,7 +204,7 @@ class Body():
             # Get the ceiling values for the max x and y so thet we loop ove all spaces
             max_x_ceil = math.ceil(self.max_x)
             max_y_ceil = math.ceil(max_y)
-            self.logger.debug('range(max_x_ceil): %s, range(max_y_ceil): %s', str(range(max_x_ceil)), str(range(max_y_ceil)))
+            logger.debug('range(max_x_ceil): %s, range(max_y_ceil): %s', str(range(max_x_ceil)), str(range(max_y_ceil)))
             
             # Build full border to ensure outside edges are full suppport width
             perimeter_x = Cell.u(self.max_x) + self.support_bar_width
@@ -228,7 +234,7 @@ class Body():
                     w = self.max_x - x
                 # For each y in the ceiling of max_y
                 for y in range(max_y_ceil):
-                    self.logger.debug('x: %f, y: %f', x, y)
+                    # logger.debug('x: %f, y: %f', x, y)
                     # Set support height
                     h = 1.0
                     # Find diff between top of support and max y
@@ -262,6 +268,9 @@ class Body():
 
 
     def case_border(self, case_x, case_y, corner):
+        this_function_name = sys._getframe(  ).f_code.co_name
+        logger = self.logger.getChild(this_function_name)
+
         # Create case wall part
         case_wall = self.case_body_block(case_x, case_y, corner)
 
@@ -275,7 +284,7 @@ class Body():
         case_wall -= case_inner
 
         # Move case wall to match origin of rest of keyboard
-        self.logger.debug('side_margin_diff: %s, top_margin_diff: %s', self.side_margin_diff, self.top_margin_diff)
+        logger.debug('side_margin_diff: %s, top_margin_diff: %s', self.side_margin_diff, self.top_margin_diff)
         case_wall = right((self.real_max_x / 2) + (self.side_margin_diff / 2)) ( back((self.real_max_y / 2) + (self.top_margin_diff / 2)) ( case_wall ) )
 
         # Move case wall down to match with the top of the plate
@@ -332,7 +341,7 @@ class Body():
 
 
     def screw_hole_body_support(self, direction = 'right', screw_name = ''):
-        # self.logger.debug('screw_hole_body_support: screw_name: %s, direction: %s', screw_name, direction)
+        # logger.debug('screw_hole_body_support: screw_name: %s, direction: %s', screw_name, direction)
         x_offset = self.screw_hole_body_radius
         screw_hole_body_support_end_x = (self.case_height_extra_fill / self.screw_hole_body_support_x_factor) + x_offset
         poly_points = [
@@ -344,7 +353,7 @@ class Body():
         ]
         poly_path = [[0, 1, 2, 3]]
 
-        # self.logger.debug(poly_points)
+        # logger.debug(poly_points)
 
         hole_support = polygon(poly_points, poly_path)
         hole_support = linear_extrude(height = 2, center = True) ( hole_support )
@@ -383,6 +392,8 @@ class Body():
 
 
     def generate_screw_holes_coordinates(self):
+        this_function_name = sys._getframe(  ).f_code.co_name
+        logger = self.logger.getChild(this_function_name)
 
         # screw_hole_collection = union()
         # corner_count = 4
@@ -393,8 +404,8 @@ class Body():
         # screw_set_min_x = 0
         # screw_set_min_y = 0
 
-        self.logger.debug('self.real_case_width: %f, self.screw_edge_inset: %f, self.screw_diameter: %f', self.real_case_width, self.screw_edge_inset, self.screw_diameter)
-        self.logger.debug('self.real_case_width - ((self.screw_edge_inset * 2) + self.screw_diameter): %f', self.real_case_width - ((self.screw_edge_inset * 2) + self.screw_diameter))
+        # logger.debug('self.real_case_width: %f, self.screw_edge_inset: %f, self.screw_diameter: %f', self.real_case_width, self.screw_edge_inset, self.screw_diameter)
+        # logger.debug('self.real_case_width - ((self.screw_edge_inset * 2) + self.screw_diameter): %f', self.real_case_width - ((self.screw_edge_inset * 2) + self.screw_diameter))
 
         x_screw_count = 0
         y_screw_count = 0
@@ -410,7 +421,7 @@ class Body():
 
         remaining_screw_count = int((self.screw_count - 4) / 2)
 
-        # self.logger.debug('remaining_screw_count: %f', type(remaining_screw_count))
+        # logger.debug('remaining_screw_count: %f', type(remaining_screw_count))
 
         x_per_screw_spacing = 0
         y_per_screw_spacing = 0
@@ -424,12 +435,12 @@ class Body():
             else:
                 y_screw_count += 1
 
-            self.logger.debug('x_screw_count: %d, y_screw_count: %d', x_screw_count, y_screw_count)
+            # logger.debug('x_screw_count: %d, y_screw_count: %d', x_screw_count, y_screw_count)
 
         x_per_screw_spacing = self.x_screw_width / (x_screw_count + 1)
         y_per_screw_spacing = self.y_screw_width / (y_screw_count + 1)
 
-        self.logger.debug('x_per_screw_spacing: %f, y_per_screw_spacing: %f', x_per_screw_spacing, y_per_screw_spacing)
+        logger.debug('x_per_screw_spacing: %f, y_per_screw_spacing: %f', x_per_screw_spacing, y_per_screw_spacing)
 
         for i in range(x_screw_count):
             # Top Screws
@@ -444,7 +455,7 @@ class Body():
             self.screw_hole_coordinates.append([self.x_screw_width, (i + 1) * y_per_screw_spacing])
 
         # for coord in self.screw_hole_coordinates:
-        #     self.logger.debug(coord)
+        #     logger.debug(coord)
 
         for coords in self.screw_hole_coordinates:
             coords_string = str(coords[0]) + ',' + str(coords[1])
@@ -478,10 +489,10 @@ class Body():
             x = coord[0]
             y = coord[1]
 
-            # self.logger.debug('coord: %s, self.x_screw_width: %f, self.y_screw_width: %f', str(coord), self.x_screw_width, self.y_screw_width)
+            # logger.debug('coord: %s, self.x_screw_width: %f, self.y_screw_width: %f', str(coord), self.x_screw_width, self.y_screw_width)
             # Skip the center top screw hole if it is in the top center and the case has a cable hole
             if self.parameters.cable_hole == True and y == self.y_screw_width and x == self.x_screw_width / 2:
-                # self.logger.debug('coord: %s', str(coord))
+                # logger.debug('coord: %s', str(coord))
                 continue
 
             hole = right(x) ( forward(y) ( self.screw_hole(tap = tap) ) )
@@ -535,7 +546,7 @@ class Body():
         # x_offset = (-self.left_margin)
         y_offset = (self.real_max_y + self.bottom_margin) - self.screw_edge_inset
 
-        # self.logger.debug('-self.left_margin: %f, self.screw_edge_inset: %f, x_offset: %f', -self.left_margin, self.screw_edge_inset, x_offset)
+        # logger.debug('-self.left_margin: %f, self.screw_edge_inset: %f, x_offset: %f', -self.left_margin, self.screw_edge_inset, x_offset)
 
         screw_hole_collection = right(x_offset) ( 
             back(y_offset) (

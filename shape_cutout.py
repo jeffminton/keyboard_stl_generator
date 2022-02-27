@@ -8,7 +8,7 @@ from cell import Cell
 from parameters import Parameters
 from switch_config import SwitchConfig
 
-class Switch(Cell):
+class ShapeCutout(Cell):
     """
     Defines a Switch object that inherits from the Cell class
 
@@ -19,32 +19,6 @@ class Switch(Cell):
     x : float
         The x coorinate of the top left of the switch in keyboard layout U units
 
-    y : float
-        The y coorinate of the top left of the switch in keyboard layout U units
-
-    w : float
-        The width of the switch in keyboard layout U units
-
-    h : float
-        The height of the switch in keyboard layout U units
-
-    rotation : float, default 0.0
-        The angle the switch will be rotated to
-
-    r_x_offset : float, default 0.0
-        The x offset from origin tha tthe rotation oriin will be moved to
-
-    r_y_offset : float, default 0.0
-        The y offset from origin tha tthe rotation oriin will be moved to
-
-    cell_value : float, default ''
-        The actual text of the key
-
-    switch_config : SwitchConfig, default None
-        config opbject for switch
-
-    parameters : Parameters, default None
-        object containing parameter settings
 
     Methods
     -------
@@ -52,20 +26,7 @@ class Switch(Cell):
         Get a switch soild that matches the attribute settings
     update_all_neighbors_set(neighbor_group = 'local')
         Check if all neighbors are defined where they exist and set the neighbor_check_complete value to match
-    get_all_neighbors_set(neighbor_group = 'local')
-        Get the value of neighbor_check_complete for the passed in neughbor group
-    get_neighbor(neighbor_name, neighbor_group = 'local')
-        Get the neighbor Switch object for the name and group passed in
-    set_neighbor(neighbor = None, neighbor_name = '', offset = 0.0, has_neighbor = True, neighbor_group = 'local', perp_offset = 0.0)
-        Set a neighbor for the switch object
-    has_neighbor(neighbor_name = '', neighbor_group = 'local')
-        Return True if switch has a neigbor with name and group passed in. False if no neighbor
-    get_neighbor_offset(neighbor_name = '', neighbor_group = 'local')
-        Get the x offset to the neighbor for the name and group passed in
-    get_neighbor_perp_offset(neighbor_name = '', neighbor_group = 'local')
-        Get the perpendicular offset to the neighbor for the name and group passed in
-    get_neighbor_direction_list()
-        Helper to get list of neighbor direction names
+
     """
 
     NEIGHBOR_OPOSITE_DICT = {
@@ -89,7 +50,7 @@ class Switch(Cell):
 
         self.solid = self.switch_cutout()
 
-        self.logger.debug('x: %f, y: %f, w: %f, h: %f, end_x: %f, end_y: %f', self.x, self.y, self.w, self.h, self.end_x, self.end_y) 
+        # self.logger.debug('x: %f, y: %f, w: %f, h: %f, end_x: %f, end_y: %f', self.x, self.y, self.w, self.h, self.end_x, self.end_y) 
 
         self.global_neighbors = {
             'right': {

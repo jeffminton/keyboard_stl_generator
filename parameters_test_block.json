@@ -8,7 +8,7 @@
     "stabilizer_type": "cherry_costar",
 
     "custom_shape": false, 
-    "custum_shape_points": null,
+    "custom_shape_points": null,
     "custom_shape_path": null,
     
     "plate_supports": true,

@@ -11,7 +11,7 @@ class Cable():
     def __init__(self, parameters: Parameters = None):
 
 
-        self.logger = logging.getLogger('generator.' + __name__)
+        self.logger = logging.getLogger().getChild(__name__)
 
         self.parameters = parameters
 

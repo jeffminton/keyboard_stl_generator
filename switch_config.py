@@ -1,6 +1,7 @@
 
 
 import logging
+import sys
 
 from cell import Cell
 
@@ -29,9 +30,9 @@ class SwitchConfig():
     COSTAR_NOTCH_SWITCH_SIDE_X_OFFSET = 1.65
     SIDE_NOTCH_FAR_SIDE_X_OFFSET = 4.2
 
-    def __init__(self, kerf = 0.0,  switch_type = 'mx_openable', stabilizer_type = 'cherry_costar', custom_shape = False, custum_shape_points = None, custom_shape_path = None):
+    def __init__(self, kerf = 0.0,  switch_type = 'mx_openable', stabilizer_type = 'cherry_costar', custom_shape = False, custom_shape_points = None, custom_shape_path = None):
 
-        self.logger = logging.getLogger('generator.' + __name__)
+        self.logger = logging.getLogger().getChild(__name__)
 
         self.kerf = kerf
         self.pos_kerf = self.kerf
@@ -40,6 +41,16 @@ class SwitchConfig():
         self.switch_type = switch_type
         self.stabilizer_type = stabilizer_type
 
+        self.custom_shape = custom_shape
+        self.custom_shape_points = custom_shape_points
+        self.custom_shape_path = custom_shape_path
+
+        if self.custom_shape == True:
+            self.switch_type = 'custom'
+
+        self.logger.info('self.custom_shape: %s, self.custom_shape_points: %s, self.custom_shape_path: %s', str(self.custom_shape), str(self.custom_shape_points), str(self.custom_shape_path))
+
+
         # The type of switch that should be rendered
         # Default os mx_openable: The standard cutout to allow opening a switch when it is soldered to a PCB
         # Options:
@@ -47,13 +58,12 @@ class SwitchConfig():
         #       mx: best for hand wiring. Cannot open PCB mounted switches
         #       mx_alps: supports mx and alps switches. Allows opening PCB mounted mx switches
         #       alps: standar alps cutout
-        self.switch_type = switch_type
-
         self.switch_type_function_dict = {
             'mx_openable': self.mx_openable_switch_cutout,
             'mx': self.mx_switch_cutout,
             'mx_alps': self.mx_alps_switch_cutout,
-            'alps': self.alps_switch_cutout
+            'alps': self.alps_switch_cutout,
+            'custom': self.custom_switch_cutout
         }
 
         # The type of stabilizer that should be rendered:
@@ -63,8 +73,6 @@ class SwitchConfig():
         #       cherry: support for just cherry stabilizers
         #       costar: support for just costar stabilizers
         #       alps: suport for the alsp stabilizer
-        self.stabilizer_type = stabilizer_type
-
         self.stab_type_function_dict = {
             'cherry_costar': self.cherry_costar_stab_cutout,
             'cherry': self.cherry_stab_cutout,
@@ -78,6 +86,9 @@ class SwitchConfig():
 
     
     def get_switch_poly_info(self):
+        this_function_name = sys._getframe(  ).f_code.co_name
+        logger = self.logger.getChild(this_function_name)
+        logger.info(self.switch_type)
         if self.switch_type in self.switch_type_function_dict.keys():
             return self.switch_type_function_dict[self.switch_type]()
         else:
@@ -177,6 +188,18 @@ class SwitchConfig():
 
 
 
+    def custom_switch_cutout(self):
+        this_function_name = sys._getframe(  ).f_code.co_name
+        logger = self.logger.getChild(this_function_name)
+        poly_points = self.custom_shape_points
+
+        logger.info('custom_switch_cutout: %s', str(poly_points))
+
+        return poly_points
+
+
+
+
 
     def get_cherry_stab_cutout_spacing(self, key_width = 1.0):
         
@@ -227,6 +250,9 @@ class SwitchConfig():
 
 
     def cherry_costar_stab_cutout(self, key_width = 1.0):
+        this_function_name = sys._getframe(  ).f_code.co_name
+        logger = self.logger.getChild(this_function_name)
+
         support_cutout_poly_points = None
 
         s = self.get_cherry_stab_cutout_spacing(key_width = key_width)
@@ -270,7 +296,7 @@ class SwitchConfig():
                 [(-s + 3.375 + (self.kerf * 2 )), (6.77 + (self.kerf * 2 ) + stab_bar_width)]
             ]
 
-            self.logger.debug(support_cutout_poly_points)
+            logger.debug(support_cutout_poly_points)
 
             return poly_points, support_cutout_poly_points
 
@@ -280,6 +306,9 @@ class SwitchConfig():
     
 
     def cherry_stab_cutout(self, key_width = 1.0):
+        this_function_name = sys._getframe(  ).f_code.co_name
+        logger = self.logger.getChild(this_function_name)
+        
         support_cutout_poly_points = None
 
         s = self.get_cherry_stab_cutout_spacing(key_width = key_width)
@@ -332,7 +361,7 @@ class SwitchConfig():
                 [(-s + 3.375 + (self.kerf * 2 )), (6.77 + (self.kerf * 2 ) + stab_bar_width)]
             ]
 
-            self.logger.debug(support_cutout_poly_points)
+            logger.debug(support_cutout_poly_points)
 
             return poly_points, support_cutout_poly_points
 
@@ -361,6 +390,9 @@ class SwitchConfig():
 
 
     def alps_stab_cutout(self, key_width = 1.0):
+        this_function_name = sys._getframe(  ).f_code.co_name
+        logger = self.logger.getChild(this_function_name)
+
         support_cutout_poly_points = None
 
         s = self.get_alps_stab_cutout_spacing(key_width = key_width)
@@ -394,7 +426,7 @@ class SwitchConfig():
                 [support_cutout_x + support_cutout_w, support_cutout_y]
             ]
 
-            self.logger.debug(support_cutout_poly_points)
+            logger.debug(support_cutout_poly_points)
             return poly_points, support_cutout_poly_points
 
         else:
