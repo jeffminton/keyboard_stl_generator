@@ -4,11 +4,12 @@ from solid.utils import *
 import logging
 
 from cell import Cell
+from parameters import Parameters
 
 class SupportCutout(Cell):
 
-    def __init__(self, x, y, w, h, plate_thickness, support_bar_height, support_bar_width, rotation = 0.0,  r_x_offset = 0.0, r_y_offset = 0.0, set_to_origin = False, cell_value = ''):
-        super().__init__(x, y, w, h, rotation,  r_x_offset, r_y_offset, cell_value = cell_value)
+    def __init__(self, x, y, w, h, plate_thickness, support_bar_height, support_bar_width, rotation = 0.0,  r_x_offset = 0.0, r_y_offset = 0.0, set_to_origin = False, cell_value = '', parameters: Parameters = Parameters()):
+        super().__init__(x, y, w, h, rotation,  r_x_offset, r_y_offset, cell_value = cell_value, parameters = parameters)
 
         self.logger = logging.getLogger().getChild(__name__)
 
@@ -26,8 +27,8 @@ class SupportCutout(Cell):
         return 'SupportCutout: ' + super().__str__()
 
     def support_cutout(self):    
-        d = down(self.support_bar_height / 2) ( cube([self.u(self.w), self.u(self.h), self.support_bar_height + self.plate_thickness], center = True) )
+        d = down(self.support_bar_height / 2) ( cube([self.w_mm, self.h_mm, self.support_bar_height + self.plate_thickness], center = True) )
     
-        d = right(self.u(self.w / 2)) ( back(self.u(self.h / 2)) ( d ) )
+        d = right(self.w_mm / 2) ( back(self.h_mm / 2) ( d ) )
 
         return d # right(u(w / 2)) ( back(u(h / 2)) ( d ) )

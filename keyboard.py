@@ -46,8 +46,8 @@ class Keyboard():
 
         self.switch_config = self.parameters.switch_config
 
-        self.build_x = math.floor(parameters.x_build_size / Cell.SWITCH_SPACING)
-        self.build_y = math.floor(parameters.y_build_size / Cell.SWITCH_SPACING)
+        self.build_x = math.floor(parameters.x_build_size / self.parameters.switch_spacing)
+        self.build_y = math.floor(parameters.y_build_size / self.parameters.switch_spacing)
 
         self.switch_collection = ItemCollection()
         self.support_collection = ItemCollection()
@@ -127,8 +127,8 @@ class Keyboard():
                         y_offset = -(y)
 
                         switch = Switch(x_offset, y_offset, w, h, rotation = rotation, cell_value = col_escaped, switch_config = self.switch_config, parameters = self.parameters)
-                        support = Support(x_offset, y_offset, w, h, self.parameters.plate_thickness, self.parameters.support_bar_height, self.parameters.support_bar_width, rotation = rotation)
-                        support_cutout = SupportCutout(x_offset, y_offset, w, h, self.parameters.plate_thickness, self.parameters.support_bar_height, self.parameters.support_bar_width, rotation = rotation)
+                        support = Support(x_offset, y_offset, w, h, self.parameters.plate_thickness, self.parameters.support_bar_height, self.parameters.support_bar_width, rotation = rotation, parameters = self.parameters)
+                        support_cutout = SupportCutout(x_offset, y_offset, w, h, self.parameters.plate_thickness, self.parameters.support_bar_height, self.parameters.support_bar_width, rotation = rotation, parameters = self.parameters)
 
                         # Create switch cutout and support object without rotation
                         if rotation == 0.0:
@@ -243,7 +243,7 @@ class Keyboard():
         
         # Move top_assembly so that the bottom left sits at 0, 0, 0
         top_assembly = up(self.parameters.case_height_base_removed - (self.parameters.plate_thickness / 2)) (
-            forward(Cell.u(abs(min_y)) + self.parameters.bottom_margin) (
+            forward(self.parameters.real_max_y + self.parameters.bottom_margin) (
                 right(self.parameters.left_margin) (
                     top_assembly 
                 )
@@ -251,7 +251,7 @@ class Keyboard():
         )
 
         bottom_assembly = up(self.parameters.case_height_base_removed - (self.parameters.plate_thickness / 2)) (
-            forward(Cell.u(abs(min_y)) + self.parameters.bottom_margin) (
+            forward(self.parameters.real_max_y + self.parameters.bottom_margin) (
                 right(self.parameters.left_margin) (
                     bottom_assembly
                 )
@@ -260,21 +260,21 @@ class Keyboard():
         
         if screw_hole_collection is not None:
             screw_hole_collection = up(self.parameters.case_height_base_removed - (self.parameters.plate_thickness / 2)) (
-                forward(Cell.u(abs(min_y)) + self.parameters.bottom_margin) (
+                forward(self.parameters.real_max_y + self.parameters.bottom_margin) (
                     right(self.parameters.left_margin) (
                         screw_hole_collection
                     )
                 )
             )
             screw_hole_body_collection = up(self.parameters.case_height_base_removed - (self.parameters.plate_thickness / 2)) (
-                forward(Cell.u(abs(min_y)) + self.parameters.bottom_margin) (
+                forward(self.parameters.real_max_y + self.parameters.bottom_margin) (
                     right(self.parameters.left_margin) (
                         screw_hole_body_collection
                     )
                 )
             )
             screw_hole_body_scaled_collection = up(self.parameters.case_height_base_removed - (self.parameters.plate_thickness / 2)) (
-                forward(Cell.u(abs(min_y)) + self.parameters.bottom_margin) (
+                forward(self.parameters.real_max_y + self.parameters.bottom_margin) (
                     right(self.parameters.left_margin) (
                         screw_hole_body_scaled_collection
                     )
@@ -282,7 +282,7 @@ class Keyboard():
             )
         
         body_block = up(self.parameters.case_height_base_removed - (self.parameters.plate_thickness / 2)) (
-            forward(Cell.u(abs(min_y)) + self.parameters.bottom_margin) (
+            forward(self.parameters.real_max_y + self.parameters.bottom_margin) (
                 right(self.parameters.left_margin) (
                     body_block
                 )
@@ -291,7 +291,7 @@ class Keyboard():
 
         if self.desired_section_number > -1:
             bottom_section_inclusion = up(self.parameters.case_height_base_removed - (self.parameters.plate_thickness / 2)) (
-                forward(Cell.u(abs(min_y)) + self.parameters.bottom_margin) (
+                forward(self.parameters.real_max_y + self.parameters.bottom_margin) (
                     right(self.parameters.left_margin) (
                         bottom_section_inclusion
                     )
@@ -443,17 +443,17 @@ class Keyboard():
             for y in self.switch_collection.get_sorted_y_list_in_x(x):
                 # logger.debug('\tx: %d, y: %d', x, y)
                 # switch_cutouts += x_row[y].get_moved()
-                current_switch = self.switch_collection.get_item(x, y)
+                current_switch: Switch = self.switch_collection.get_item(x, y)
                 current_support = self.support_collection.get_item(x, y)
                 current_support_cutout = self.support_cutout_collection.get_item(x, y)
                 w = current_switch.w
                 h = current_switch.h
                 cell_value = current_switch.cell_value
-                
-                switch_x_max = Cell.u(x + w) + self.parameters.left_margin
-                # switch_x_min = Cell.u(x) + self.parameters.left_margin
-                # switch_y_max = Cell.u(abs(y) + h) + self.parameters.top_margin
-                # switch_y_min = Cell.u(abs(y)) + self.parameters.top_margin
+
+                switch_x_max = current_switch.x_end_mm + self.parameters.left_margin
+                # switch_x_min = current_switch.x_start_mm + self.parameters.left_margin
+                # switch_y_max = current_switch.y_end_mm + self.parameters.top_margin
+                # switch_y_min = current_switch.y_start_mm + self.parameters.top_margin
 
                 if switch_x_max - current_x_start < self.parameters.x_build_size:
                     # logger.debug('current_x_section:', current_x_section)
@@ -481,7 +481,7 @@ class Keyboard():
             
             if next_x_section > current_x_section:
                 # current_x_start = self.switch_section_list[next_x_section][0]['switch_x_min']
-                current_x_start = Cell.u(self.switch_section_list[next_x_section].get_min_x())
+                current_x_start = self.parameters.U(self.switch_section_list[next_x_section].get_min_x())
                 # logger.debug('current_x_start: %f', current_x_start)
                 current_x_section = next_x_section
 
@@ -537,29 +537,29 @@ class Keyboard():
                         item = section.get_item(x, y)
 
                         # base separator bar height
-                        bar_height = Cell.u(item.h) + (self.kerf * 2)
-                        y_offset = Cell.u(item.y - item.h) - self.kerf
+                        bar_height = self.parameters.U(item.h) + (self.kerf * 2)
+                        y_offset = self.parameters.U(item.y - item.h) - self.kerf
                         right_x_offset = 0.0
                         left_x_offset = 0.0
 
                         # if switch has a local top neighbor include any offset between this and that key in separator bar
                         if item.has_neighbor('top') == True:
-                            offset = Cell.u(item.get_neighbor_offset('top'))
+                            offset = self.parameters.U(item.get_neighbor_offset('top'))
                             # logger.debug('%s, Local Top Bar True, offset: %f', str(item), offset)
                             bar_height += offset
                         
                         # If switch has no global top neighbor include the board edge in this separator bar
                         if item.has_neighbor('top', 'global') == False:
                             # logger.debug('%s, Global Top Bar False', str(item))
-                            bar_height += Cell.u(abs(item.y)) + self.parameters.top_margin
+                            bar_height += self.parameters.U(abs(item.y)) + self.parameters.top_margin
                             # logger.debug('\t bar_height: %f', bar_height)
 
                         # If switch has no global bottom neighbor include the board edge in this separator bar
                         if item.has_neighbor('bottom', 'global') == False:
                             # logger.debug('%s, Global Bottom Bar False', str(item))
-                            bar_height += Cell.u( abs(self.parameters.min_y) - (abs(item.y) + item.h) ) + self.parameters.bottom_margin
+                            bar_height += self.parameters.U( abs(self.parameters.min_y) - (abs(item.y) + item.h) ) + self.parameters.bottom_margin
                             # logger.debug('\t bar_height: %f', bar_height)
-                            y_offset -= (self.parameters.bottom_margin + Cell.u( abs(self.parameters.min_y) - (abs(item.y) + item.h) ) )
+                            y_offset -= (self.parameters.bottom_margin + self.parameters.U( abs(self.parameters.min_y) - (abs(item.y) + item.h) ) )
 
                             # if item.has_neighbor('right') == True:
                                 # perp_offset = item.get_neighbor_perp_offset('right')
@@ -588,21 +588,21 @@ class Keyboard():
                             # logger.debug('Switch: %s, neighbor_offset: %f', str(item), neighbor_offset)
 
                             if neighbor_offset > 0.0:
-                                right_x_offset += Cell.u(neighbor_offset) / 2
+                                right_x_offset += self.parameters.U(neighbor_offset) / 2
                                 # logger.debug('1: switch %s, right_x_offset %f', str(item), right_x_offset)
 
                         
                         # if include_right_border == False:
                         if item.has_neighbor('right') == False:
                             # logger.debug('switch %s, has right neighbor %s', str(item), str(item.has_neighbor('right')))
-                            right_x_offset += Cell.u(item.x + item.w)
+                            right_x_offset += self.parameters.U(item.x + item.w)
 
                             if item.has_neighbor('right', 'global') == True:
                                 neighbor_offset = item.get_neighbor_offset('right', 'global')
-                                right_x_offset += Cell.u(min([neighbor_offset / 2, max_x]))
-                                # logger.debug('\t\tglobal right neighbor offset: %f, right_x_offset: %f', neighbor_offset, right_x_offset - Cell.u(item.x + item.w))
+                                right_x_offset += self.parameters.U(min([neighbor_offset / 2, max_x]))
+                                # logger.debug('\t\tglobal right neighbor offset: %f, right_x_offset: %f', neighbor_offset, right_x_offset - self.parameters.U(item.x + item.w))
                             else:
-                                right_x_offset += Cell.u(max_x - item.end_x)
+                                right_x_offset += self.parameters.U(max_x - item.end_x)
                             if include_right_border == False:
                                 remove_block += down(remove_block_z_offset) ( right(right_x_offset) ( forward(y_offset) ( cube([remove_block_length, bar_height, remove_block_height]) ) ) )
                         
@@ -610,33 +610,33 @@ class Keyboard():
                         if item.has_neighbor('left') == False:
                             # logger.debug('2: switch %s, left_x_offset %f', str(item), left_x_offset)
                             # logger.debug('switch %s, has left neighbor %s', str(item), str(item.has_neighbor('left')))
-                            # logger.debug('remove_block_length: %f, item.x: %f, Cell.u(item.x): %f, -(remove_block_length) + Cell.u(item.x): %f', remove_block_length, item.x, Cell.u(item.x), -(remove_block_length) + Cell.u(item.x))
-                            left_x_offset += -(remove_block_length) + Cell.u(item.x)
+                            # logger.debug('remove_block_length: %f, item.x: %f, self.parameters.U(item.x): %f, -(remove_block_length) + self.parameters.U(item.x): %f', remove_block_length, item.x, self.parameters.U(item.x), -(remove_block_length) + self.parameters.U(item.x))
+                            left_x_offset += -(remove_block_length) + self.parameters.U(item.x)
                             # logger.debug('3: switch %s, left_x_offset %f', str(item), left_x_offset)
 
                             if item.has_neighbor('left', 'global') == True:
                                 neighbor_offset = item.get_neighbor_offset('left', 'global')
                                 # logger.debug('\t\tglobal left neighbor offset: %f, left_x_offset: %f', neighbor_offset, left_x_offset)
                                 if neighbor_offset > 0.0:
-                                    left_x_offset -= Cell.u(neighbor_offset) / 2
+                                    left_x_offset -= self.parameters.U(neighbor_offset) / 2
                                     # logger.debug('\t\tglobal left neighbor offset: %f, left_x_offset: %f', neighbor_offset, left_x_offset)
 
                             if include_left_border == False:
                                 # logger.debug('4: switch %s, left_x_offset %f', str(item), left_x_offset)
                                 remove_block += down(remove_block_z_offset) ( right(left_x_offset) ( forward(y_offset) ( cube([remove_block_length, bar_height, remove_block_height]) ) ) )
-                                # remove_block += down(self.support_bar_height * 3) ( right(left_x_offset) ( forward(Cell.u(item.y - item.h) ) ( cube([self.support_bar_width / 2, bar_height, self.support_bar_height * 10]) ) ) )
+                                # remove_block += down(self.support_bar_height * 3) ( right(left_x_offset) ( forward(self.parameters.U(item.y - item.h) ) ( cube([self.support_bar_width / 2, bar_height, self.support_bar_height * 10]) ) ) )
                         
                         # if include_top_border == False:
                         #     logger.debug('switch %s, has top neighbor %s', str(item), str(item.has_neighbor('top')))
                         #     if item.has_neighbor('top') == False:
                         #         logger.debug('\tno top neighbor')
-                        #         top_switch_edge += down(self.support_bar_height * 3) ( right(Cell.u(item.x + item.w)) ( forward(Cell.u(item.y - item.h) ) ( cube([self.support_bar_width / 2, Cell.u(item.h), self.support_bar_height * 10]) ) ) )
+                        #         top_switch_edge += down(self.support_bar_height * 3) ( right(self.parameters.U(item.x + item.w)) ( forward(self.parameters.U(item.y - item.h) ) ( cube([self.support_bar_width / 2, self.parameters.U(item.h), self.support_bar_height * 10]) ) ) )
                         
                         # if include_bottom_border == False:
                         #     logger.debug('switch %s, has bottom neighbor %s', str(item), str(item.has_neighbor('bottom')))
                         #     if item.has_neighbor('bottom') == False:
                         #         logger.debug('\tno bottom neighbor')
-                        #         bottom_switch_edge += down(self.support_bar_height * 3) ( right(Cell.u(item.x + item.w)) ( forward(Cell.u(item.y - item.h) ) ( cube([self.support_bar_width / 2, Cell.u(item.h), self.support_bar_height * 10]) ) ) )
+                        #         bottom_switch_edge += down(self.support_bar_height * 3) ( right(self.parameters.U(item.x + item.w)) ( forward(self.parameters.U(item.y - item.h) ) ( cube([self.support_bar_width / 2, self.parameters.U(item.h), self.support_bar_height * 10]) ) ) )
 
         return remove_block
 

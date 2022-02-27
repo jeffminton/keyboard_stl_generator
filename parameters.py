@@ -4,11 +4,13 @@ import sys
 from pathlib import PurePath
 
 from switch_config import SwitchConfig
-from cell import Cell
+# from cell import Cell
 
 
 
 class Parameters():
+
+    # SWITCH_SPACING = 19.05
 
     def __init__(self, parameter_dict: dict = None):
 
@@ -63,7 +65,7 @@ class Parameters():
             'plate_wall_thickness': 'case_wall_thickness'
         }
 
-
+        self.switch_spacing = 19.05
 
         self.plate_supports = True
         
@@ -152,6 +154,10 @@ class Parameters():
         # self.validate_parameters()
         
 
+    def U(self, u_value):
+        return u_value * self.switch_spacing
+
+
     def update_calculated_attributes(self):
         # Calculated attributes
         self.case_height_base_removed = self.case_height - self.bottom_cover_thickness
@@ -178,8 +184,8 @@ class Parameters():
         logger.debug('min_x: %f, max_x: %f, max_y: %f, min_y: %f', self.min_x, self.max_x, self.max_y, self.min_y)
 
         # Get rhe calculated real max and y sizes of the board
-        self.real_max_x = Cell.u(self.max_x)
-        self.real_max_y = Cell.u(abs(self.min_y))
+        self.real_max_x = self.U(self.max_x)
+        self.real_max_y = self.U(abs(self.min_y))
 
         self.real_case_width = self.real_max_x + self.left_margin + self.right_margin
         self.real_case_height = self.real_max_y + self.top_margin + self.bottom_margin

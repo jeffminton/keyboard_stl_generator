@@ -143,26 +143,26 @@ class Body():
         self.bottom_section_count = self.parameters.bottom_section_count
 
 
-    def set_dimensions(self, max_x, min_y, min_x, max_y):
-        this_function_name = sys._getframe(  ).f_code.co_name
-        logger = self.logger.getChild(this_function_name)
+    # def set_dimensions(self, max_x, min_y, min_x, max_y):
+    #     this_function_name = sys._getframe(  ).f_code.co_name
+    #     logger = self.logger.getChild(this_function_name)
 
-        self.max_x = max_x
-        self.max_x = max_x
-        self.min_y = min_y
-        self.max_y = max_y
-        # logger.debug('min_x: %f, max_x: %f, max_y: %f, min_y: %f', self.min_x, self.max_x, self.max_y, self.min_y)
+    #     self.max_x = max_x
+    #     self.max_x = max_x
+    #     self.min_y = min_y
+    #     self.max_y = max_y
+    #     # logger.debug('min_x: %f, max_x: %f, max_y: %f, min_y: %f', self.min_x, self.max_x, self.max_y, self.min_y)
 
-        # Get rhe calculated real max and y sizes of the board
-        self.real_max_x = Cell.u(self.max_x)
-        self.real_max_y = Cell.u(abs(self.min_y))
+    #     # Get rhe calculated real max and y sizes of the board
+    #     self.real_max_x = self.parameters.U(self.max_x)
+    #     self.real_max_y = self.parameters.U(abs(self.min_y))
 
-        self.real_case_width = self.real_max_x + self.left_margin + self.right_margin
-        self.real_case_height = self.real_max_y + self.top_margin + self.bottom_margin
+    #     self.real_case_width = self.real_max_x + self.left_margin + self.right_margin
+    #     self.real_case_height = self.real_max_y + self.top_margin + self.bottom_margin
 
-        logger.debug('real_max_x: %d, real_max_y: %s', self.real_max_x, self.real_max_y)
+    #     logger.debug('real_max_x: %d, real_max_y: %s', self.real_max_x, self.real_max_y)
 
-        self.update_calculated_attributes()
+    #     self.update_calculated_attributes()
 
 
     def build_attr_from_dict(self, parameter_dict):
@@ -207,18 +207,18 @@ class Body():
             logger.debug('range(max_x_ceil): %s, range(max_y_ceil): %s', str(range(max_x_ceil)), str(range(max_y_ceil)))
             
             # Build full border to ensure outside edges are full suppport width
-            perimeter_x = Cell.u(self.max_x) + self.support_bar_width
-            perimeter_y = Cell.u(max_y) + self.support_bar_width
+            perimeter_x = self.real_max_x + self.support_bar_width
+            perimeter_y = self.real_max_y + self.support_bar_width
             perimeter_height = self.support_bar_height + self.plate_thickness
             perimeter = left(self.support_bar_width / 2) ( back(self.support_bar_width / 2) ( cube([perimeter_x, perimeter_y, perimeter_height]) ) )
 
-            perimeter_inner = cube([Cell.u(self.max_x), Cell.u(max_y), self.support_bar_height])
+            perimeter_inner = cube([self.real_max_x, self.real_max_y, self.support_bar_height])
 
             perimeter -= perimeter_inner
 
             perimeter = down(self.support_bar_height + (self.plate_thickness / 2)) ( perimeter )
 
-            perimeter = back(Cell.u(max_y)) ( perimeter )
+            perimeter = back(self.real_max_y) ( perimeter )
 
             plate_object += perimeter
 
@@ -245,13 +245,13 @@ class Body():
                         h = max_y - y
 
                     # Get X and Y offset to move support to corect location
-                    # x_offset = x - ((self.real_max_x / 2) + (self.side_margin_diff / 2)) / Cell.SWITCH_SPACING
-                    # y_offset = -(y - ((self.real_max_y / 2) + (self.top_margin_diff / 2)) / Cell.SWITCH_SPACING)
+                    # x_offset = x - ((self.real_max_x / 2) + (self.side_margin_diff / 2)) / self.parameters.switch_spacing
+                    # y_offset = -(y - ((self.real_max_y / 2) + (self.top_margin_diff / 2)) / self.parameters.switch_spacing)
                     x_offset = x
                     y_offset = -y
                     
                     # Add support object to plate
-                    plate_object += Support(x_offset, y_offset, w, h, self.plate_thickness, self.support_bar_height, self.support_bar_width).get_moved()
+                    plate_object += Support(x_offset, y_offset, w, h, self.plate_thickness, self.support_bar_height, self.support_bar_width, parameters = self.parameters).get_moved()
 
         # eturn palte object
         return plate_object

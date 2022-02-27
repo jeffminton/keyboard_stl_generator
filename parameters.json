@@ -38,15 +38,6 @@
     "cable_diameter": 3,
     "cable_hole_down_offset": 5,
 
-    "custom_switch": {
-        "points": [
-            [6,2],
-            [6, -2],
-            [-6, -2],
-            [-6, 2]
-        ]
-    },
-
     "custom_shapes": [
         {
             "circle": {

@@ -125,7 +125,7 @@ class RotationCollection:
         
 
                 solid = rotate(a = -(rotation), v = (0, 0, 1)) ( solid )
-                solid = right(Cell.u(rx)) ( back(Cell.u(ry)) ( solid ) )
+                solid = right(self.parameters.U(rx)) ( back(self.parameters.U(ry)) ( solid ) )
         
         return solid
 

@@ -5,11 +5,12 @@ import logging
 import math
 import json
 import sys
+from parameters import Parameters
 
 
 class Cell:
     # Switch Dimensions
-    SWITCH_SPACING = 19.05
+    # SWITCH_SPACING = 19.05
     # SQUARE_SIZE = 14
     # SQUARE_SIZE_HALF = SQUARE_SIZE / 2
     # # NOTCH_HEIGHT = 3.5
@@ -34,10 +35,12 @@ class Cell:
     # COSTAR_NOTCH_SWITCH_SIDE_X_OFFSET = 1.65
     # SIDE_NOTCH_FAR_SIDE_X_OFFSET = 4.2
 
-    def __init__(self, x: float, y: float, w: float, h: float, rotation = 0.0,  r_x_offset = 0.0, r_y_offset = 0.0, cell_value = ''):
+    def __init__(self, x: float, y: float, w: float, h: float, rotation = 0.0,  r_x_offset = 0.0, r_y_offset = 0.0, cell_value = '', parameters: Parameters = Parameters()):
         
         self.logger = logging.getLogger().getChild(__name__)
-        
+
+        self.parameters = parameters
+
         self.x = x
         self.y = y
         self.w = w
@@ -73,11 +76,14 @@ class Cell:
         self.end_x = self.x + self.w
         self.end_y = self.y - self.h
 
-        self.x_start_mm = self.u(x)
-        self.x_end_mm = self.x_start_mm + self.u(w)
+        self.x_start_mm = self.parameters.U(x)
+        self.x_end_mm = self.x_start_mm + self.parameters.U(w)
 
-        self.y_start_mm = self.u(y)
-        self.y_end_mm = self.y_start_mm + self.u(h)
+        self.y_start_mm = self.parameters.U(y)
+        self.y_end_mm = self.y_start_mm + self.parameters.U(h)
+
+        self.h_mm = self.parameters.U(self.h)
+        self.w_mm = self.parameters.U(self.w)
 
         self.switch_length = self.w
         if self.h > self.w:
@@ -95,9 +101,9 @@ class Cell:
 
         
             
-    @staticmethod
-    def u(u_value):
-        return u_value * Cell.SWITCH_SPACING
+    # @staticmethod
+    # def u(u_value):
+    #     return u_value * Cell.SWITCH_SPACING
 
     def __str__(self):
         return '%s (%f, %f)' % (self.cell_value, self.x, self.y)
@@ -106,7 +112,7 @@ class Cell:
         return self.solid
 
     def get_moved(self):
-        return right(self.u(self.x)) ( forward(self.u(self.y)) ( self.solid ) )
+        return right(self.x_start_mm) ( forward(self.y_start_mm) ( self.solid ) )
 
     def get_start_x(self) -> float: 
         if self.rotaton == 0.0:
@@ -218,7 +224,7 @@ class Cell:
         for corner_name in self.corner_order:
             # logger.debug(corner_name)
             points_orig.append([self.rotation_info[corner_name]['rotated_x'], self.rotation_info[corner_name]['rotated_y']])
-            points.append([Cell.u(self.rotation_info[corner_name]['rotated_x']), Cell.u(self.rotation_info[corner_name]['rotated_y'])])
+            points.append([self.parameters.U(self.rotation_info[corner_name]['rotated_x']), self.parameters.U(self.rotation_info[corner_name]['rotated_y'])])
             
         return points
     

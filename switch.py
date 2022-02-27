@@ -76,8 +76,8 @@ class Switch(Cell):
     }
 
 
-    def __init__(self, x, y, w, h, rotation = 0.0,  r_x_offset = 0.0, r_y_offset = 0.0, cell_value = '', switch_config = None, parameters = None):
-        super().__init__(x, y, w, h, rotation,  r_x_offset, r_y_offset, cell_value = cell_value)
+    def __init__(self, x, y, w, h, rotation = 0.0,  r_x_offset = 0.0, r_y_offset = 0.0, cell_value = '', switch_config = None, parameters: Parameters = Parameters()):
+        super().__init__(x, y, w, h, rotation,  r_x_offset, r_y_offset, cell_value = cell_value, parameters = parameters)
 
         self.logger = logging.getLogger().getChild(__name__)
 
@@ -214,7 +214,7 @@ class Switch(Cell):
             
             cutout = rotate(a = -90, v = (0, 0, 1)) ( cutout )
 
-        offset_cutout = right(self.u(self.w / 2)) ( back(self.u(self.h / 2)) ( cutout ) )
+        offset_cutout = right(self.w_mm / 2) ( back(self.h_mm / 2) ( cutout ) )
 
         return offset_cutout
 

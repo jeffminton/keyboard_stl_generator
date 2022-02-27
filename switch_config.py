@@ -3,7 +3,7 @@
 import logging
 import sys
 
-from cell import Cell
+# from cell import Cell
 
 class SwitchConfig():
 
