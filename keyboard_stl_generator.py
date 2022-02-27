@@ -223,6 +223,7 @@ def main():
         
     # Process the keyboard layout object
     keyboard.process_keyboard_layout(keyboard_layout_dict)
+    keyboard.process_custom_shapes()
 
     logger.debug('kerf: %f', keyboard.kerf)
 

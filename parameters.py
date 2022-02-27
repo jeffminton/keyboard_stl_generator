@@ -112,7 +112,8 @@ class Parameters():
         self.cable_hole_down_offset = 1
 
         self.switch_config = None
-        self.custom_shapes = None
+
+        self.custom_polygons = None
 
         self.test_block = False
         self.test_block_x_start = 0

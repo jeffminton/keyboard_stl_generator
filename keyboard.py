@@ -17,6 +17,7 @@ from body import Body
 from switch_config import SwitchConfig
 from parameters import Parameters
 from cable import Cable
+from shape_cutout import ShapeCutout
 
 
 
@@ -56,12 +57,16 @@ class Keyboard():
         self.support_rotation_collection = RotationCollection()
         self.support_cutout_rotation_collection = RotationCollection()
 
+        self.custom_polygon_collection = ItemCollection()
+
         self.switch_cutouts = union()
         self.switch_supports = union()
         self.switch_support_cutouts = union()
         self.rotate_switch_cutout_collection = union()
         self.rotate_support_collection = union()
         self.rotate_support_cutout_collection = union()
+
+        self.custom_polygon_cutout_collection = union()
 
         self.switch_section_list = [ItemCollection()]
         self.support_section_list = [ItemCollection()]
@@ -157,6 +162,23 @@ class Keyboard():
         # create sections of the keyboard for usin in splitting for printing
         self.split_keyboard()
 
+    def process_custom_shapes(self):
+        this_function_name = sys._getframe(  ).f_code.co_name
+        logger = self.logger.getChild(this_function_name)
+
+        if self.parameters.custom_polygons is not None:
+            for shape in self.parameters.custom_polygons:
+                custom_shape_type = shape['type']
+                coordinates_list = shape['coordinates']
+
+                for coordinates in coordinates_list:
+                    x = coordinates[0]
+                    y = coordinates[1]
+
+                    custom_shape = ShapeCutout(x, y, custom_shape_type, shape, self.parameters)
+                    self.custom_polygon_collection.add_item(x, y, custom_shape)
+
+
     def get_assembly(self, top = False, bottom = False, all = True, plate_only = False):
         this_function_name = sys._getframe(  ).f_code.co_name
         logger = self.logger.getChild(this_function_name)
@@ -181,6 +203,8 @@ class Keyboard():
         self.switch_supports += support_collection.get_moved_union()
         self.switch_cutouts += switch_collection.get_moved_union()
         self.switch_support_cutouts += support_cutout_collection.get_moved_union()
+
+        self.custom_polygon_cutout_collection = self.custom_polygon_collection.get_moved_union()
 
         (rotated_min_x, rotated_max_x, rotated_max_y, rotated_min_y) = self.switch_rotation_collection.get_real_collection_bounds()
 
@@ -241,6 +265,10 @@ class Keyboard():
             bottom_section_inclusion = self.get_bottom_section_remove_block(self.desired_section_number)
             # bottom_assembly -= self.get_bottom_section_remove_block(self.desired_section_number)
         
+
+        self.custom_polygon_cutout_collection = up(self.parameters.case_height_base_removed - (self.parameters.plate_thickness / 2)) (
+            self.custom_polygon_cutout_collection
+        )
         # Move top_assembly so that the bottom left sits at 0, 0, 0
         top_assembly = up(self.parameters.case_height_base_removed - (self.parameters.plate_thickness / 2)) (
             forward(self.parameters.real_max_y + self.parameters.bottom_margin) (
@@ -335,6 +363,8 @@ class Keyboard():
             screw_hole_body_scaled_collection *= test_block
             body_block *= test_block
 
+        # Remove thw custom cutouts before tilting
+        top_assembly -= self.custom_polygon_cutout_collection
 
         # Tile the body if desired
         if self.parameters.tilt > 0.0:
@@ -388,7 +418,7 @@ class Keyboard():
 
         if top == True or plate_only == True:
             if screw_hole_body_scaled_collection is not None:
-                return top_assembly - screw_hole_body_scaled_collection
+                return (top_assembly - screw_hole_body_scaled_collection)
             else:
                 return top_assembly
         elif bottom == True:

@@ -35,7 +35,7 @@ class Cell:
     # COSTAR_NOTCH_SWITCH_SIDE_X_OFFSET = 1.65
     # SIDE_NOTCH_FAR_SIDE_X_OFFSET = 4.2
 
-    def __init__(self, x: float, y: float, w: float, h: float, rotation = 0.0,  r_x_offset = 0.0, r_y_offset = 0.0, cell_value = '', parameters: Parameters = Parameters()):
+    def __init__(self, x: float, y: float, w: float = 1.0, h: float = 1.0, rotation = 0.0,  r_x_offset = 0.0, r_y_offset = 0.0, cell_value = '', parameters: Parameters = Parameters()):
         
         self.logger = logging.getLogger().getChild(__name__)
 

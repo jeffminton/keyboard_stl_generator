@@ -40,7 +40,7 @@
     "cable_diameter": 3,
     "cable_hole_down_offset": 5,
 
-    "custom_shapes": [
+    "custom_polygons": [
         {
             "circle": {
                 "r": 5,

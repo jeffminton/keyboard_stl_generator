@@ -47,7 +47,7 @@
         ]
     },
 
-    "custom_shapes": [
+    "custom_polygons": [
         {
             "circle": {
                 "r": 5,

@@ -1,3 +1,4 @@
+from curses.textpad import rectangle
 from solid import *
 from solid.utils import *
 
@@ -37,79 +38,23 @@ class ShapeCutout(Cell):
     }
 
 
-    def __init__(self, x, y, w, h, rotation = 0.0,  r_x_offset = 0.0, r_y_offset = 0.0, cell_value = '', switch_config = None, parameters: Parameters = Parameters()):
-        super().__init__(x, y, w, h, rotation,  r_x_offset, r_y_offset, cell_value = cell_value, parameters = parameters)
+    def __init__(self, x, y, shape_type, shape_parameters, parameters: Parameters = Parameters()):
+        super().__init__(x, y, parameters = parameters)
 
         self.logger = logging.getLogger().getChild(__name__)
 
-        self.switch_config = switch_config
-        if self.switch_config is None:
-            self.switch_config = SwitchConfig()
-
         self.parameters: Parameters = parameters
 
-        self.solid = self.switch_cutout()
+        self.shape_type = shape_type
+        self.shape_parameters = shape_parameters
 
-        # self.logger.debug('x: %f, y: %f, w: %f, h: %f, end_x: %f, end_y: %f', self.x, self.y, self.w, self.h, self.end_x, self.end_y) 
-
-        self.global_neighbors = {
-            'right': {
-            },
-            'left': {
-            },
-            'top': {
-            },
-            'bottom': {
-            },
-            'neighbor_check_complete': False
+        self.shape_type_function_dict = {
+            'circle': self.circle_cutout,
+            'rectangle': self.rectangle_cutout,
+            'polygon': self.polygon_cutout
         }
 
-        self.local_neighbors = {
-            'right': {
-            },
-            'left': {
-            },
-            'top': {
-            },
-            'bottom': {
-            },
-            'neighbor_check_complete': False
-        }
-
-        # self.right = None
-        # self.left_in_section = None
-        # self.up_in_section = None
-        # self.down_in_section = None
-
-        # self.neighbors
-    
-
-    def neighbors_formatted(self, obj, indent = 2, current_indent = 0):
-        current_output = ''
-        current_indent_str = ' ' * current_indent
-        if isinstance(obj, dict):
-            for i, key in enumerate(obj.keys()):
-                value = obj[key]
-                current_output += current_indent_str + key + ': '
-
-                if isinstance(value, dict):
-                    current_output += '{\n'
-
-                current_output += str(self.neighbors_formatted(value, indent, current_indent + indent))
-
-
-                if isinstance(value, dict):
-                    current_output += current_indent_str+ '}'
-
-                if i < len(obj.keys()) - 1:
-                    current_output += ','
-
-                current_output += '\n'
-
-        else:
-            current_output += str(obj)
-
-        return current_output
+        self.solid = self.get_shape_cutout()
 
 
     def __str__(self):
@@ -121,154 +66,69 @@ class ShapeCutout(Cell):
         return 'Switch: ' + super().__str__() + '\nglobal neighbors: \n' + global_neighbors_json + '\local neighbors: \n' + local_neighbors_json
 
 
-    def switch_cutout(self):
-        """
-        Return the polygon that will be used to cutout a place in the plate for a switch
+    def get_shape_cutout(self):
+        shape = self.shape_type_function_dict[self.shape_type]()
 
-        Returns
-        -------
-        OpenSCADObject
-            The OpenSCADObject for the cutout
-        """
-        this_function_name = sys._getframe(  ).f_code.co_name
+        return linear_extrude(height = 10, center = True)(shape)
+
+
+    def get_moved(self):
+        return right(self.x) ( forward(self.y) ( self.solid ) )
+    
+    def circle_cutout(self):
+        this_function_name = sys._getframe().f_code.co_name
         logger = self.logger.getChild(this_function_name)
 
-        logger.debug('switch %s, switch type: %s, stab type: %s', self.cell_value, self.switch_config.switch_type, self.switch_config.stabilizer_type)
+        if 'r' in self.shape_parameters.keys():
+            radius = self.shape_parameters['r']
+        elif 'd' in self.shape_parameters.keys():
+            radius = self.shape_parameters['d'] / 2
+        else:
+            logger.error('Either a radius "r" or diameter "d" key and value must be set when createing a cutsom circle cutout')
+            exit(1)
+
+        return circle(r = radius)
+
+    def rectangle_cutout(self):
+        this_function_name = sys._getframe().f_code.co_name
+        logger = self.logger.getChild(this_function_name)
+
+        width = 0
+        height = 0
+        # Both width and height defined. Use both
+        if 'width' in self.shape_parameters.keys() and 'height' in self.shape_parameters.keys():
+            width = self.shape_parameters['width']
+            height = self.shape_parameters['height']
+        elif 'width' in self.shape_parameters.keys():
+            width = self.shape_parameters['width']
+            height = self.shape_parameters['width']
+        elif 'height' in self.shape_parameters.keys():
+            width = self.shape_parameters['height']
+            height = self.shape_parameters['height']
+        else:
+            logger.error('At least a "width" or "height" must be provided for a custom rectangle cutout. Specifying only 1 of those will create a squatre')
+            exit(1)
+
+        return square(width, height)
+
+    def polygon_cutout(self):
+        this_function_name = sys._getframe().f_code.co_name
+        logger = self.logger.getChild(this_function_name)
+
+        points = None
+        psth = None
+
+        if 'points' in self.shape_parameters.keys():
+            points = self.shape_parameters['points']
+        else:
+            logger.error('A list of points with key "points" must be provided for a custom polygon cutout')
+            exit(1)
+
+        if 'path' in self.shape_parameters.keys():
+            path = [self.shape_parameters['path']]
+        else:
+            logger.info('No path provided for custom polygon. Will use points in order they were listed')
+            path = [range(len(points))]
         
-        # switch_poly_points, switch_poly_path = self.switch_config.get_switch_poly_info()
-        # stab_poly_points, stab_poly_path = self.switch_config.get_stab_poly_info(key_width = self.switch_length)
+        return polygon(points, path)
 
-        switch_poly_points = self.switch_config.get_switch_poly_info()
-        switch_poly_path = [range(len(switch_poly_points))]
-
-        stab_poly_points, support_cutout_poly_points = self.switch_config.get_stab_poly_info(key_width = self.switch_length)
-        
-        
-        logger.debug('\tswitch_poly_points: %d, switch_poly_path: %d', len(switch_poly_points), len(switch_poly_path))
-
-        # Create swtch cutout polygon
-        cutout_polygon = polygon(switch_poly_points, switch_poly_path)
-
-        # Create stab polygon if it is defined
-        if stab_poly_points is not None:
-            stab_poly_path = [range(len(stab_poly_points))]
-            
-            logger.debug('\t\tstab_poly_points: %d, stab_poly_path: %d', len(stab_poly_points), len(stab_poly_path))
-            stab = polygon(stab_poly_points, stab_poly_path) + mirror([1, 0, 0]) ( polygon(stab_poly_points, stab_poly_path) )
-            # stab = polygon(stab_poly_points, stab_poly_path)# + mirror([1, 0, 0]) ( polygon(stab_poly_points, stab_poly_path) )
-            if support_cutout_poly_points is not None:
-                support_cutout_poly_path = [range(len(support_cutout_poly_points))]
-                support_cutout = polygon(support_cutout_poly_points, support_cutout_poly_path) + mirror([1, 0, 0]) ( polygon(support_cutout_poly_points, support_cutout_poly_path) )
-            cutout_polygon += stab
-
-        cutout = linear_extrude(height = 10, center = True)(cutout_polygon)
-
-        if support_cutout_poly_points is not None:
-            cutout += down( (10 / 2) + (self.parameters.plate_thickness / 2) ) (
-                linear_extrude(height = 10, center = True)(support_cutout)
-            )
-
-        cutout = rotate(a = 180, v = (0, 0, 1)) ( cutout )
-
-        # Rotate a key if it is taller than it is wide
-        if self.vertical:
-            
-            cutout = rotate(a = -90, v = (0, 0, 1)) ( cutout )
-
-        offset_cutout = right(self.w_mm / 2) ( back(self.h_mm / 2) ( cutout ) )
-
-        return offset_cutout
-
-
-
-    def update_all_neighbors_set(self, neighbor_group = 'local'):
-
-        if neighbor_group == 'local':
-            neighbor_dict = self.local_neighbors
-        elif neighbor_group == 'global':
-            neighbor_dict =  self.global_neighbors
-
-            
-        all_neighbors_set = True
-        for direction in neighbor_dict.keys():
-            if direction != 'neighbor_check_complete':
-                if len(neighbor_dict[direction].keys()) == 0:
-                    all_neighbors_set = False
-
-        neighbor_dict['neighbor_check_complete'] = all_neighbors_set
-
-
-    def get_all_neighbors_set(self, neighbor_group = 'local'):
-
-        if neighbor_group == 'local':
-            neighbor_dict = self.local_neighbors
-        elif neighbor_group == 'global':
-            neighbor_dict =  self.global_neighbors
-
-        return neighbor_dict['neighbor_check_complete']
-
-
-    def get_neighbor(self, neighbor_name, neighbor_group = 'local'):
-        
-        neighbor = None
-
-        if neighbor_group == 'local':
-            neighbor = self.local_neighbors[neighbor_name]['neighbor']
-        elif neighbor_group == 'global':
-            neighbor =  self.global_neighbors[neighbor_name]['neighbor']
-
-        return neighbor
-
-    def set_neighbor(self, neighbor = None, neighbor_name = '', offset = 0.0, has_neighbor = True, neighbor_group = 'local', perp_offset = 0.0):
-        
-        temp_dict = {
-            'has_neighbor': has_neighbor,
-            'neighbor': neighbor,
-            'offset': offset,
-            'perp_offset': perp_offset
-        }
-        
-        if neighbor_group == 'local':
-            self.local_neighbors[neighbor_name] = temp_dict
-        elif neighbor_group == 'global':
-            self.global_neighbors[neighbor_name] = temp_dict
-        
-    # def set_right_neighbor(self, neighbor = None, offset = 0.0, has_neighbor = True, neighbor_group = 'local', perp_offset = 0.0):
-    #     self.set_neighbor(neighbor, 'right', offset, has_neighbor, neighbor_group, perp_offset)
-
-    # def set_left_neighbor(self, neighbor = None, offset = 0.0, has_neighbor = True, neighbor_group = 'local', perp_offset = 0.0):
-    #     self.set_neighbor(neighbor, 'left', offset, has_neighbor, neighbor_group, perp_offset)
-
-    # def set_top_neighbor(self, neighbor = None, offset = 0.0, has_neighbor = True, neighbor_group = 'local', perp_offset = 0.0):
-    #     self.set_neighbor(neighbor, 'top', offset, has_neighbor, neighbor_group, perp_offset)
-
-    # def set_bottom_neighbor(self, neighbor = None, offset = 0.0, has_neighbor = True, neighbor_group = 'local', perp_offset = 0.0):
-    #     self.set_neighbor(neighbor, 'bottom', offset, has_neighbor, neighbor_group, perp_offset)
-
-    def has_neighbor(self, neighbor_name = '', neighbor_group = 'local'):
-        if neighbor_group == 'local':
-            return self.local_neighbors[neighbor_name]['has_neighbor']
-        elif neighbor_group == 'global':
-            return self.global_neighbors[neighbor_name]['has_neighbor']
-    
-    def get_neighbor_offset(self, neighbor_name = '', neighbor_group = 'local'):
-        if neighbor_group == 'local':
-            return self.local_neighbors[neighbor_name]['offset']
-        elif neighbor_group == 'global':
-            return self.global_neighbors[neighbor_name]['offset']
-
-    def get_neighbor_perp_offset(self, neighbor_name = '', neighbor_group = 'local'):
-        if neighbor_group == 'local':
-            return self.local_neighbors[neighbor_name]['perp_offset']
-        elif neighbor_group == 'global':
-            return self.global_neighbors[neighbor_name]['perp_offset']
-
-    def get_neighbor_direction_list(self):
-
-        name_list = []
-
-        for neighbor_name in self.local_neighbors.keys():
-            if isinstance(self.local_neighbors[neighbor_name], dict):
-                name_list.append(neighbor_name)
-
-        return name_list
