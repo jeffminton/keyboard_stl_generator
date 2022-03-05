@@ -204,7 +204,8 @@ class Keyboard():
         self.switch_cutouts += switch_collection.get_moved_union()
         self.switch_support_cutouts += support_cutout_collection.get_moved_union()
 
-        self.custom_polygon_cutout_collection = self.custom_polygon_collection.get_moved_union()
+        if self.parameters.custom_polygons is not None:
+            self.custom_polygon_cutout_collection = self.custom_polygon_collection.get_moved_union()
 
         (rotated_min_x, rotated_max_x, rotated_max_y, rotated_min_y) = self.switch_rotation_collection.get_real_collection_bounds()
 
@@ -235,7 +236,7 @@ class Keyboard():
         # Add case to top_assembly
         top_assembly += self.body.case(plate_only = plate_only)
 
-        if self.parameters.get_param('simple_test') == False:
+        if self.parameters.simple_test == False:
             # Remove switch suport cutouts
             top_assembly -= self.switch_support_cutouts
 
