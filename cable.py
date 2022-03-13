@@ -58,12 +58,13 @@ class Cable():
         # Clamp parameters
         # The width of the clapm is a percentage of the width of the suport block
         # This defines the clamp percentage
-        self.clamp_percentage = 1.0
-        self.clamp_holder_gap = .05 # self.parameters.kerf * 2
+        self.clamp_percentage = .9
+        self.clamp_holder_gap = .1 # self.parameters.kerf * 2
         self.clamp_block_height = self.cable_holder_height / 4
         self.clamp_block_width = (self.inner_block_width * self.clamp_percentage)# - (self.clamp_holder_gap * 2)
         # Set a value that will reduce the height of the cable hole when the clamp is inserted
         self.clamp_hole_offset = .1
+        self.clamp_height_percent_of_holder_height = .75
 
 
         self.logger.debug('Cable Hole Witdh: %f', self.parameters.cable_hole_width)
@@ -211,15 +212,18 @@ class Cable():
         # Move block up to allign with holder body
         clamp_block = up((self.parameters.case_wall_thickness / 2)) ( clamp_block )
 
+        # Get the clamp height as a percentage of the whole holder height
+        clamp_height = self.cable_holder_height * self.clamp_height_percent_of_holder_height
+
         # Set offset for surround block height
-        surround_block_height_offset = (clamp_holder_gap * 6)
+        surround_block_height_offset = (self.cable_holder_height - clamp_height) #(clamp_holder_gap * 24)
 
         # Create surround block
         surround_block = forward((surround_block_height_offset / 2)) ( # forward(self.clamp_block_height - self.clamp_hole_offset) ( 
             cube(
                 [
                     self.clamp_block_width + (clamp_holder_extra * 2), 
-                    (self.cable_holder_height) - surround_block_height_offset,# + self.clamp_hole_offset, 
+                    clamp_height,
                     self.stop_plate_thickness - (clamp_holder_gap * 2)
                 ], 
                 center = True
