@@ -59,33 +59,91 @@ The program can then genarate a number of different items. The entire case can b
 - This is an example of a simple parameters file [parameters.json](/parameters.json)
 - Here is a list of the possible paramters and what they do
   - 3d Printer Relate Paramters
-    - **x_build_size**: X build plate size in mm
-    - **y_build_size**: Y build plate size in mm
-    - **kerf**: kerf to allow for expansion of material usefuly to give switch holes a bit more space to fit better
+    - **x_build_size:** X build plate size in mm
+    - **y_build_size:** Y build plate size in mm
+    - **kerf:** kerf to allow for expansion of material usefuly to give switch holes a bit more space to fit better
+  - Switch and Stabilizer Parameters
+    - **switch_type:** Switch type. Default: mx_openable. Options: mx_openable, mx, mx_alps, alps, custom (requires custom shape parameters)
+    - **stabilizer_type:** Stabilizer type. Default: cherry_costar. Options: cherry_costar, cherry, costar, alps
+    - **custom_switch:** Defines the parameters for a custom switch shape. If this is defined it overrides the switch_type selection
+      - **points:** List of x, y coordinates. The coordinates must be defined where (0, 0) is the center of the cutout shape. ex. This would be a 14x14 mm square [[7, 7], [7, -7], [-7, -7], [-7, 7]]
+      - **path:** List that defines the order that the points should be traversed to draw the shape. If this is omitted the list of points will be followed in the order the are defined
+      - **EXAMPLE:** The following example would create a 14x14 mm square cutout
+        ```
+        "custom_switch": {
+            "points": [
+                [7, 7],
+                [7, -7],
+                [-7, -7],
+                [-7, 7]
+            ],
+            "path": [0, 1, 2, 3]
+        }
+        ```
   - Plate Only parameters
-    - **plate_supports**: Generate support ridges that help to strengthen the plate true or false
-    - **plate_thickness**: How thick the plate should be. This will affect how well switched hold into the plate in mm
-    - **support_bar_height**: How far down from the top of the plate the support bars should be in mm
-    - **support_bar_width**: How wide the support bars should be in mm
+    - **plate_supports:** Generate support ridges that help to strengthen the plate true or false
+    - **support_bar_height:** How far down from the top of the plate the support bars should be in mm
+    - **support_bar_width:** How wide the support bars should be in mm
   - Plate and Body Parameters
-    - **top_margin**: amount of extra material that should be added to top of plate in mm
-    - **bottom_margin**: amount of extra material that should be added to bottom of plate in mm
-    - **left_margin**: amount of extra material that should be added to left of plate in mm
-    - **right_margin**: amount of extra material that should be added to right of plate in mm
-    - **case_height**: the height of the case. When tilt is used this will be height of the lowest part of the case in mm
-    - **plate_wall_thickness**: How thick the walls of the case should be in mm
-    - **plate_corner_radius**: The radius to be used in rounding corners of the case in mm
-    - **bottom_cover_thickness**: The thickness of the base palte of the case in mm
-    - **tilt**: The number of degrees the case should be tilted forward
+    - **plate_thickness:** How thick the plate should be. This will affect how well switched hold into the plate in mm
+    - **top_margin:** amount of extra material that should be added to top of plate in mm
+    - **bottom_margin:** amount of extra material that should be added to bottom of plate in mm
+    - **left_margin:** amount of extra material that should be added to left of plate in mm
+    - **right_margin:** amount of extra material that should be added to right of plate in mm
+    - **case_height:** the height of the case. When tilt is used this will be height of the lowest part of the case in mm
+    - **plate_wall_thickness:** How thick the walls of the case should be in mm
+    - **plate_corner_radius:** The radius to be used in rounding corners of the case in mm
+    - **bottom_cover_thickness:** The thickness of the base palte of the case in mm
+    - **tilt:** The number of degrees the case should be tilted forward
   - Mounting Screw Parameters
-    - **screw_count**: The number of scre holes to generate. If a cable hole is added and a screw hole would interfere with it the screw hole is not created
-    - **screw_diameter**: The diameter of the scres to be used in mm
-    - **screw_edge_inset**: How far in off the edge of the plate should the center of the scre hole be.
+    - **screw_count:** The number of scre holes to generate. If a cable hole is added and a screw hole would interfere with it the screw hole is not created
+    - **screw_diameter:** The diameter of the scres to be used in mm
+    - **screw_edge_inset:** How far in off the edge of the plate should the center of the scre hole be.
   - Cable Hole Parameters
-    - **cable_hole**: Generate a hole in the back of the case for a cable. true or false
-    - **hole_width**: The width of the screw hole in mm
-    - **hole_height**: The height of the screw hole in mm
-    - **cable_hole_down_offset**: How far down from the bottom of the plate thickness should the screw hole be placed.
+    - **cable_hole:** Generate a hole in the back of the case for a cable. true or false
+    - **hole_width:** The width of the screw hole in mm
+    - **hole_height:** The height of the screw hole in mm
+    - **cable_hole_down_offset:** How far down from the bottom of the plate thickness should the screw hole be placed.
+    - **cable_diameter:** The diameter of the cable. Used to create a strain relief clamp that holds the cablein place so it does not tug on an internal conector
+  - Custom Cutout Shapes: These options allow for defining extra cutouts on the plate for things like oled displays or encoders.
+    - **custom_polygons:** Define a set of custom polygons to be cutout of the top plate
+      - **type:** The type of shape to create. Options: circle, rectangle, polygon
+      - **r (circle):** Radius.
+      - **width (rectangle):** Width of rectangle. If only width is defined the shape will be a square with matching height and width
+      - **height (rectangle):** Height of rectangle. If only height is defined the shape will be a square with matching height and width
+      - **points (polygon):** List of x, y coordinates that define the vertices of a polygon
+      - **path (polygon):** List that defines the order that the points should be traversed to draw the shape. If this is omitted the list of points will be followed in the order the are defined
+      - **coordinates:** The coordinates defining x and y distance from the origin the cutout should be moved from. 0, 0 is the bottom left of the keybaord. For circle and rectangle the origin is the bottom left of the shape. For polygon the origin is defined by the points in the points list
+      - **EXAMPLE:**
+        ```
+        "custom_polygons": [
+            {
+                "type": "circle",
+                "d": 7.5,
+                "coordinates": [
+                    [114.3, 110]
+                ]
+            },
+            {
+                "type": "polygon",
+                "points": [
+                    [0, 0],
+                    [-10, 13],
+                    [5, 17]
+                ],
+                "coordinates": [
+                    [5, 5]
+                ]
+            },
+            {
+                "type": "rectangle",
+                "width": 12.5,
+                "coordinates": [
+                    [0, 0]
+                ]
+            }
+        ]
+        ```
 
 ## Example Output
 ### Output Format
