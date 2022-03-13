@@ -86,9 +86,8 @@ class SwitchConfig():
 
     
     def get_switch_poly_info(self):
-        this_function_name = sys._getframe(  ).f_code.co_name
-        logger = self.logger.getChild(this_function_name)
-        logger.info(self.switch_type)
+        
+        self.logger.info(self.switch_type)
         if self.switch_type in self.switch_type_function_dict.keys():
             return self.switch_type_function_dict[self.switch_type]()
         else:
@@ -189,11 +188,10 @@ class SwitchConfig():
 
 
     def custom_switch_cutout(self):
-        this_function_name = sys._getframe(  ).f_code.co_name
-        logger = self.logger.getChild(this_function_name)
+        
         poly_points = self.custom_shape_points
 
-        logger.info('custom_switch_cutout: %s', str(poly_points))
+        self.logger.info('custom_switch_cutout: %s', str(poly_points))
 
         return poly_points
 
@@ -250,8 +248,7 @@ class SwitchConfig():
 
 
     def cherry_costar_stab_cutout(self, key_width = 1.0):
-        this_function_name = sys._getframe(  ).f_code.co_name
-        logger = self.logger.getChild(this_function_name)
+        
 
         support_cutout_poly_points = None
 
@@ -296,7 +293,7 @@ class SwitchConfig():
                 [(-s + 3.375 + (self.kerf * 2 )), (6.77 + (self.kerf * 2 ) + stab_bar_width)]
             ]
 
-            logger.debug(support_cutout_poly_points)
+            self.logger.debug(support_cutout_poly_points)
 
             return poly_points, support_cutout_poly_points
 
@@ -306,8 +303,7 @@ class SwitchConfig():
     
 
     def cherry_stab_cutout(self, key_width = 1.0):
-        this_function_name = sys._getframe(  ).f_code.co_name
-        logger = self.logger.getChild(this_function_name)
+        
         
         support_cutout_poly_points = None
 
@@ -361,7 +357,7 @@ class SwitchConfig():
                 [(-s + 3.375 + (self.kerf * 2 )), (6.77 + (self.kerf * 2 ) + stab_bar_width)]
             ]
 
-            logger.debug(support_cutout_poly_points)
+            self.logger.debug(support_cutout_poly_points)
 
             return poly_points, support_cutout_poly_points
 
@@ -390,8 +386,7 @@ class SwitchConfig():
 
 
     def alps_stab_cutout(self, key_width = 1.0):
-        this_function_name = sys._getframe(  ).f_code.co_name
-        logger = self.logger.getChild(this_function_name)
+        
 
         support_cutout_poly_points = None
 
@@ -426,7 +421,7 @@ class SwitchConfig():
                 [support_cutout_x + support_cutout_w, support_cutout_y]
             ]
 
-            logger.debug(support_cutout_poly_points)
+            self.logger.debug(support_cutout_poly_points)
             return poly_points, support_cutout_poly_points
 
         else:

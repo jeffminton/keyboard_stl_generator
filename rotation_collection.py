@@ -78,7 +78,7 @@ class RotationCollection:
                     min_y += -(ry)
                     max_y += -(ry)
 
-                    # logger.debug('rx: %f, ry: %f, min_x: %f, max_x: %f, max_y: %f, min_y: %f', rx, ry, min_x, max_x, max_y, min_y)
+                    # self.logger.debug('rx: %f, ry: %f, min_x: %f, max_x: %f, max_y: %f, min_y: %f', rx, ry, min_x, max_x, max_y, min_y)
 
                     if min_x < real_min_x:
                         real_min_x = min_x

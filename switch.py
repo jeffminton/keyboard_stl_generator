@@ -169,10 +169,8 @@ class Switch(Cell):
         OpenSCADObject
             The OpenSCADObject for the cutout
         """
-        this_function_name = sys._getframe(  ).f_code.co_name
-        logger = self.logger.getChild(this_function_name)
 
-        logger.debug('switch %s, switch type: %s, stab type: %s', self.cell_value, self.switch_config.switch_type, self.switch_config.stabilizer_type)
+        self.logger.debug('switch %s, switch type: %s, stab type: %s', self.cell_value, self.switch_config.switch_type, self.switch_config.stabilizer_type)
         
         # switch_poly_points, switch_poly_path = self.switch_config.get_switch_poly_info()
         # stab_poly_points, stab_poly_path = self.switch_config.get_stab_poly_info(key_width = self.switch_length)
@@ -183,7 +181,7 @@ class Switch(Cell):
         stab_poly_points, support_cutout_poly_points = self.switch_config.get_stab_poly_info(key_width = self.switch_length)
         
         
-        logger.debug('\tswitch_poly_points: %d, switch_poly_path: %d', len(switch_poly_points), len(switch_poly_path))
+        self.logger.debug('\tswitch_poly_points: %d, switch_poly_path: %d', len(switch_poly_points), len(switch_poly_path))
 
         # Create swtch cutout polygon
         cutout_polygon = polygon(switch_poly_points, switch_poly_path)
@@ -192,7 +190,7 @@ class Switch(Cell):
         if stab_poly_points is not None:
             stab_poly_path = [range(len(stab_poly_points))]
             
-            logger.debug('\t\tstab_poly_points: %d, stab_poly_path: %d', len(stab_poly_points), len(stab_poly_path))
+            self.logger.debug('\t\tstab_poly_points: %d, stab_poly_path: %d', len(stab_poly_points), len(stab_poly_path))
             stab = polygon(stab_poly_points, stab_poly_path) + mirror([1, 0, 0]) ( polygon(stab_poly_points, stab_poly_path) )
             # stab = polygon(stab_poly_points, stab_poly_path)# + mirror([1, 0, 0]) ( polygon(stab_poly_points, stab_poly_path) )
             if support_cutout_poly_points is not None:

@@ -77,43 +77,48 @@ class ShapeCutout(Cell):
     
     def circle_cutout(self):
         this_function_name = sys._getframe().f_code.co_name
-        logger = self.logger.getChild(this_function_name)
+        self.logger = self.logger.getChild(this_function_name)
 
         if 'r' in self.shape_parameters.keys():
             radius = self.shape_parameters['r']
         elif 'd' in self.shape_parameters.keys():
             radius = self.shape_parameters['d'] / 2
         else:
-            logger.error('Either a radius "r" or diameter "d" key and value must be set when createing a cutsom circle cutout')
+            self.logger.error('Either a radius "r" or diameter "d" key and value must be set when createing a cutsom circle cutout')
             exit(1)
 
         return circle(r = radius)
 
     def rectangle_cutout(self):
         this_function_name = sys._getframe().f_code.co_name
-        logger = self.logger.getChild(this_function_name)
+        self.logger = self.logger.getChild(this_function_name)
 
         width = 0
         height = 0
         # Both width and height defined. Use both
         if 'width' in self.shape_parameters.keys() and 'height' in self.shape_parameters.keys():
+            self.logger.warn('both height and width supplied')
             width = self.shape_parameters['width']
             height = self.shape_parameters['height']
         elif 'width' in self.shape_parameters.keys():
+            self.logger.warn('only width supplied')
             width = self.shape_parameters['width']
             height = self.shape_parameters['width']
         elif 'height' in self.shape_parameters.keys():
+            self.logger.warn('only height supplied')
             width = self.shape_parameters['height']
             height = self.shape_parameters['height']
         else:
-            logger.error('At least a "width" or "height" must be provided for a custom rectangle cutout. Specifying only 1 of those will create a squatre')
+            self.logger.error('At least a "width" or "height" must be provided for a custom rectangle cutout. Specifying only 1 of those will create a squatre')
             exit(1)
 
-        return square(width, height)
+        self.logger.warn('height: %f, width: %f', height, width)
+
+        return square([width, height])
 
     def polygon_cutout(self):
         this_function_name = sys._getframe().f_code.co_name
-        logger = self.logger.getChild(this_function_name)
+        self.logger = self.logger.getChild(this_function_name)
 
         points = None
         psth = None
@@ -121,13 +126,13 @@ class ShapeCutout(Cell):
         if 'points' in self.shape_parameters.keys():
             points = self.shape_parameters['points']
         else:
-            logger.error('A list of points with key "points" must be provided for a custom polygon cutout')
+            self.logger.error('A list of points with key "points" must be provided for a custom polygon cutout')
             exit(1)
 
         if 'path' in self.shape_parameters.keys():
             path = [self.shape_parameters['path']]
         else:
-            logger.info('No path provided for custom polygon. Will use points in order they were listed')
+            self.logger.info('No path provided for custom polygon. Will use points in order they were listed')
             path = [range(len(points))]
         
         return polygon(points, path)

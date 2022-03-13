@@ -222,7 +222,7 @@ class Cell:
         points = []
         
         for corner_name in self.corner_order:
-            # logger.debug(corner_name)
+            # self.logger.debug(corner_name)
             points_orig.append([self.rotation_info[corner_name]['rotated_x'], self.rotation_info[corner_name]['rotated_y']])
             points.append([self.parameters.U(self.rotation_info[corner_name]['rotated_x']), self.parameters.U(self.rotation_info[corner_name]['rotated_y'])])
             
@@ -232,7 +232,7 @@ class Cell:
     def build_rotation_info(self):
 
         # if self.cell_value in ('CC', 'DD', 'HH', 'II', 'JJ', 'LL'):
-        #     logger.debug('Build Rotation Info for key %s', str(self))
+        #     self.logger.debug('Build Rotation Info for key %s', str(self))
 
         for corner_name in self.rotation_info.keys():
             adjacent = 0
