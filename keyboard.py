@@ -14,6 +14,7 @@ from cell import Cell
 from item_collection import ItemCollection
 from rotation_collection import RotationCollection
 from body import Body
+from pcb import PCB
 from switch_config import SwitchConfig
 from parameters import Parameters
 from cable import Cable
@@ -119,14 +120,14 @@ class Keyboard():
                                 if modifier_type == 'ry':
                                     ry = size
                                 if modifier_type == 'd':
-                                    # logger.debug('Ignore next Item')
+                                    # self.logger.debug('Ignore next Item')
                                     ignore_next = True
                         
                     elif ignore_next == False:
                         col_escaped = col.encode("unicode_escape").decode("utf-8")
                         # split on newline character and get the lat element in the resulting list
                         col_escaped = col_escaped.split('\\n')[-1]
-                        # logger.debug('column value: %s', col_escaped)
+                        # self.logger.debug('column value: %s', col_escaped)
                         
                         x_offset = x
                         y_offset = -(y)
@@ -163,8 +164,7 @@ class Keyboard():
         self.split_keyboard()
 
     def process_custom_shapes(self):
-        this_function_name = sys._getframe(  ).f_code.co_name
-        logger = self.logger.getChild(this_function_name)
+        
 
         if self.parameters.custom_polygons is not None:
             for shape in self.parameters.custom_polygons:
@@ -180,8 +180,7 @@ class Keyboard():
 
 
     def get_assembly(self, top = False, bottom = False, all = True, plate_only = False):
-        this_function_name = sys._getframe(  ).f_code.co_name
-        logger = self.logger.getChild(this_function_name)
+        
         
         # Init top_assembly and bottom_assembly objects
         top_assembly = union()
@@ -209,7 +208,7 @@ class Keyboard():
 
         (rotated_min_x, rotated_max_x, rotated_max_y, rotated_min_y) = self.switch_rotation_collection.get_real_collection_bounds()
 
-        logger.debug('rotation_bounds: rotated_min_x: %f, rotated_max_x: %f, rotated_max_y: %f, rotated_min_y: %f', 
+        self.logger.debug('rotation_bounds: rotated_min_x: %f, rotated_max_x: %f, rotated_max_y: %f, rotated_min_y: %f', 
             rotated_min_x, rotated_max_x, rotated_max_y, rotated_min_y)
 
         if rotated_min_x < min_x:
@@ -232,6 +231,11 @@ class Keyboard():
 
         # Init body object
         self.body = Body(self.parameters)
+
+        # Init PCB object
+        # if self.parameters.custom_pcb == True:
+        self.pcb = PCB(self.parameters)
+        pcb_model = self.pcb.get_model()
 
         # Add case to top_assembly
         top_assembly += self.body.case(plate_only = plate_only)
@@ -276,6 +280,12 @@ class Keyboard():
                 right(self.parameters.left_margin) (
                     top_assembly 
                 )
+            )
+        )
+
+        top_assembly += up(self.parameters.case_height_base_removed) ( #) - (self.parameters.plate_thickness / 2)) (
+            right(0) (
+                pcb_model 
             )
         )
 
@@ -328,10 +338,12 @@ class Keyboard():
             )
 
         # Create block that will remove material to make case bottom flat
+        bottom_diff_plate_width = (self.parameters.real_max_x + self.parameters.right_margin + self.parameters.left_margin) * 2
+        bottom_diff_plate_height = (self.parameters.real_max_y + self.parameters.top_margin + self.parameters.bottom_margin) * 2
         bottom_diff_plate = down(self.parameters.case_height_extra * 2) (
-            back(self.parameters.real_max_y / 2) (
-                left(self.parameters.real_max_x / 2) (
-                    cube([self.parameters.real_max_x * 2, self.parameters.real_max_y * 2, self.parameters.case_height_extra * 2 ])
+            back(bottom_diff_plate_height / 4) (
+                left(bottom_diff_plate_width / 4) (
+                    cube([ bottom_diff_plate_width, bottom_diff_plate_height, self.parameters.case_height_extra * 2 ])
                 )
             )
         )
@@ -345,7 +357,7 @@ class Keyboard():
             test_block_y = self.parameters.test_block_y_end - self.parameters.test_block_y_start
             test_block_z = self.parameters.test_block_z_end - self.parameters.test_block_z_start
 
-            logger.info('test_block_x: %f, test_block_y: %f, test_block_z: %f', test_block_x, test_block_y, test_block_z)
+            self.logger.info('test_block_x: %f, test_block_y: %f, test_block_z: %f', test_block_x, test_block_y, test_block_z)
 
             test_block = translate(
                 [
@@ -398,16 +410,16 @@ class Keyboard():
         # # top_assembly = self.support_rotation_collection.get_union(rotation)
         # # top_assembly -= self.switch_rotation_collection.get_union(rotation)
         # rx_list = list(self.support_rotation_collection.get_rx_list(rotation))
-        # # logger.debug('rotation %f, rx_list: %s', rotation, str(rx_list))
+        # # self.logger.debug('rotation %f, rx_list: %s', rotation, str(rx_list))
         # ry_list = list(self.support_rotation_collection.get_ry_list_in_rx(rotation, rx_list[0]))
         # rx = rx_list[0]
         # ry = ry_list[0]
-        # logger.debug('rotation %f, rx_list: %s, ry_list: %s', rotation, str(rx_list), str(ry_list))
+        # self.logger.debug('rotation %f, rx_list: %s, ry_list: %s', rotation, str(rx_list), str(ry_list))
         # top_assembly = self.support_rotation_collection.get_rotated_union(rotation)
         # top_assembly -= self.switch_rotation_collection.get_rotated_union(rotation)
         # rotation_max_x = self.switch_rotation_collection.get_max_x(rotation, rx, ry)
         # (rotation_min_x, rotation_max_x, rotation_max_y, rotation_min_y) = self.switch_rotation_collection.get_real_collection_bounds()
-        # logger.debug('rotation %f, rotation_min_x: %f, rotation_max_x: %f, rotation_max_y: %f, rotation_min_y: %f', rotation, rotation_min_x, rotation_max_x, rotation_max_y, rotation_min_y)
+        # self.logger.debug('rotation %f, rotation_min_x: %f, rotation_max_x: %f, rotation_max_y: %f, rotation_min_y: %f', rotation, rotation_min_x, rotation_max_x, rotation_max_y, rotation_min_y)
         # # top_assembly = self.support_rotation_collection.get_rotated_moved_union(rotation)
         # # top_assembly -= self.switch_rotation_collection.get_rotated_moved_union(rotation)
 
@@ -444,20 +456,19 @@ class Keyboard():
 
 
     def split_keyboard(self):
-        this_function_name = sys._getframe(  ).f_code.co_name
-        logger = self.logger.getChild(this_function_name)
+        
 
         (min_x, max_x, max_y, min_y) = self.switch_collection.get_collection_bounds()
-        logger.debug('max_x: %d, min_y: %d', max_x, min_y)
-        logger.debug('build_x: %d, build_y: %d', self.build_x, self.build_y)
+        self.logger.debug('max_x: %d, min_y: %d', max_x, min_y)
+        self.logger.debug('build_x: %d, build_y: %d', self.build_x, self.build_y)
 
         x_parts = math.ceil(max_x / self.build_x)
         y_parts = math.ceil(abs(min_y) / self.build_y)
-        logger.debug('x_parts: %d, y_parts: %d', x_parts, y_parts)
+        self.logger.debug('x_parts: %d, y_parts: %d', x_parts, y_parts)
 
         x_per_part = math.ceil(max_x / x_parts)
         y_per_part = math.floor(min_y / y_parts)
-        logger.debug('x_per_part: %d, y_per_part: %d', x_per_part, y_per_part)
+        self.logger.debug('x_per_part: %d, y_per_part: %d', x_per_part, y_per_part)
 
         # Union all standard switch cutouts together
         current_x_start = 0.0
@@ -472,7 +483,7 @@ class Keyboard():
         switch_object_dict = self.switch_collection.get_collection_dict()
         for x in self.switch_collection.get_sorted_x_list():
             for y in self.switch_collection.get_sorted_y_list_in_x(x):
-                # logger.debug('\tx: %d, y: %d', x, y)
+                # self.logger.debug('\tx: %d, y: %d', x, y)
                 # switch_cutouts += x_row[y].get_moved()
                 current_switch: Switch = self.switch_collection.get_item(x, y)
                 current_support = self.support_collection.get_item(x, y)
@@ -487,7 +498,7 @@ class Keyboard():
                 # switch_y_min = current_switch.y_start_mm + self.parameters.top_margin
 
                 if switch_x_max - current_x_start < self.parameters.x_build_size:
-                    # logger.debug('current_x_section:', current_x_section)
+                    # self.logger.debug('current_x_section:', current_x_section)
                     self.switch_section_list[current_x_section].add_item(x, y, current_switch)
                     self.support_section_list[current_x_section].add_item(x, y, current_support)
                     self.support_cutout_section_list[current_x_section].add_item(x, y, current_support_cutout)
@@ -496,7 +507,7 @@ class Keyboard():
                     self.support_section_list[next_x_section].add_item(x, y, current_support)
                     self.support_cutout_section_list[next_x_section].add_item(x, y, current_support_cutout)
                 else:
-                    # logger.debug('switch_x_max:', switch_x_max, 'current_x_start:', current_x_start, 'switch_x_max - current_x_start:', switch_x_max - current_x_start, 'x_build_size:', x_build_size)
+                    # self.logger.debug('switch_x_max:', switch_x_max, 'current_x_start:', current_x_start, 'switch_x_max - current_x_start:', switch_x_max - current_x_start, 'x_build_size:', x_build_size)
                     next_x_section = current_x_section + 1
                     self.switch_section_list.append(ItemCollection())
                     self.switch_section_list[next_x_section].add_item(x, y, current_switch)
@@ -508,31 +519,30 @@ class Keyboard():
                     self.support_cutout_section_list[next_x_section].add_item(x, y, current_support_cutout)
 
                 
-                # logger.debug('\tswitch_x: (', switch_x_min, ',', switch_x_max, '), switch_y: (', switch_y_min, switch_y_max, ')')
+                # self.logger.debug('\tswitch_x: (', switch_x_min, ',', switch_x_max, '), switch_y: (', switch_y_min, switch_y_max, ')')
             
             if next_x_section > current_x_section:
                 # current_x_start = self.switch_section_list[next_x_section][0]['switch_x_min']
                 current_x_start = self.parameters.U(self.switch_section_list[next_x_section].get_min_x())
-                # logger.debug('current_x_start: %f', current_x_start)
+                # self.logger.debug('current_x_start: %f', current_x_start)
                 current_x_section = next_x_section
 
         for idx, section in enumerate(self.switch_section_list):
-            # logger.debug('Set Item neighbors for section %d', idx)
+            # self.logger.debug('Set Item neighbors for section %d', idx)
             section.set_collection_neighbors()
 
     def get_top_section_remove_block(self, section_number):
         this_function_name = sys._getframe(  ).f_code.co_name
-        logger = self.logger.getChild(this_function_name)
-
+        
         section = self.switch_section_list[section_number]
 
-        logger.debug('Get Section %d', section_number)
+        self.logger.debug('Get Section %d', section_number)
 
         (min_x, max_x, max_y, min_y) = section.get_collection_bounds()
 
         # (case_min_x, case_max_x, case_max_y, case_min_y) = section.get_collection_bounds()
 
-        logger.debug('Section Bounds: min_x: %f, max_x: %f, max_y: %f, min_y: %f', min_x, max_x, max_y, min_y)
+        self.logger.debug('Section Bounds: min_x: %f, max_x: %f, max_y: %f, min_y: %f', min_x, max_x, max_y, min_y)
 
         include_right_border = False
         include_left_border = False
@@ -576,62 +586,62 @@ class Keyboard():
                         # if switch has a local top neighbor include any offset between this and that key in separator bar
                         if item.has_neighbor('top') == True:
                             offset = self.parameters.U(item.get_neighbor_offset('top'))
-                            # logger.debug('%s, Local Top Bar True, offset: %f', str(item), offset)
+                            # self.logger.debug('%s, Local Top Bar True, offset: %f', str(item), offset)
                             bar_height += offset
                         
                         # If switch has no global top neighbor include the board edge in this separator bar
                         if item.has_neighbor('top', 'global') == False:
-                            # logger.debug('%s, Global Top Bar False', str(item))
+                            # self.logger.debug('%s, Global Top Bar False', str(item))
                             bar_height += self.parameters.U(abs(item.y)) + self.parameters.top_margin
-                            # logger.debug('\t bar_height: %f', bar_height)
+                            # self.logger.debug('\t bar_height: %f', bar_height)
 
                         # If switch has no global bottom neighbor include the board edge in this separator bar
                         if item.has_neighbor('bottom', 'global') == False:
-                            # logger.debug('%s, Global Bottom Bar False', str(item))
+                            # self.logger.debug('%s, Global Bottom Bar False', str(item))
                             bar_height += self.parameters.U( abs(self.parameters.min_y) - (abs(item.y) + item.h) ) + self.parameters.bottom_margin
-                            # logger.debug('\t bar_height: %f', bar_height)
+                            # self.logger.debug('\t bar_height: %f', bar_height)
                             y_offset -= (self.parameters.bottom_margin + self.parameters.U( abs(self.parameters.min_y) - (abs(item.y) + item.h) ) )
 
                             # if item.has_neighbor('right') == True:
                                 # perp_offset = item.get_neighbor_perp_offset('right')
                                 # if perp_offset > 0.0:
-                                #     logger.debug('Switch: %s, perp_offset: %f', str(item), perp_offset)
+                                #     self.logger.debug('Switch: %s, perp_offset: %f', str(item), perp_offset)
                         
                         # If switch has no global right neighbor
                         if item.has_neighbor('right', 'global') == False and item.end_x == max_x:
-                            # logger.debug('Switch %s, No global right neighbor. Not at board edge', str(item))
+                            # self.logger.debug('Switch %s, No global right neighbor. Not at board edge', str(item))
                             neighbor = None
                             neighbor_offset = 0.0
                             if item.has_neighbor('top') == True:
                                 neighbor = item.get_neighbor('top')
-                                # logger.debug('Switch: %s, top neighbor: %s', str(item), str(neighbor))
+                                # self.logger.debug('Switch: %s, top neighbor: %s', str(item), str(neighbor))
                                 offset = neighbor.get_neighbor_offset('right', 'global')
                                 if offset > neighbor_offset:
                                     neighbor_offset = offset
 
                             if item.has_neighbor('bottom') == True:
                                 neighbor = item.get_neighbor('bottom')
-                                # logger.debug('Switch: %s, bottom neighbor: %s', str(item), str(neighbor))
+                                # self.logger.debug('Switch: %s, bottom neighbor: %s', str(item), str(neighbor))
                                 offset = neighbor.get_neighbor_offset('right', 'global')
                                 if offset > neighbor_offset:
                                     neighbor_offset = offset
 
-                            # logger.debug('Switch: %s, neighbor_offset: %f', str(item), neighbor_offset)
+                            # self.logger.debug('Switch: %s, neighbor_offset: %f', str(item), neighbor_offset)
 
                             if neighbor_offset > 0.0:
                                 right_x_offset += self.parameters.U(neighbor_offset) / 2
-                                # logger.debug('1: switch %s, right_x_offset %f', str(item), right_x_offset)
+                                # self.logger.debug('1: switch %s, right_x_offset %f', str(item), right_x_offset)
 
                         
                         # if include_right_border == False:
                         if item.has_neighbor('right') == False:
-                            # logger.debug('switch %s, has right neighbor %s', str(item), str(item.has_neighbor('right')))
+                            # self.logger.debug('switch %s, has right neighbor %s', str(item), str(item.has_neighbor('right')))
                             right_x_offset += self.parameters.U(item.x + item.w)
 
                             if item.has_neighbor('right', 'global') == True:
                                 neighbor_offset = item.get_neighbor_offset('right', 'global')
                                 right_x_offset += self.parameters.U(min([neighbor_offset / 2, max_x]))
-                                # logger.debug('\t\tglobal right neighbor offset: %f, right_x_offset: %f', neighbor_offset, right_x_offset - self.parameters.U(item.x + item.w))
+                                # self.logger.debug('\t\tglobal right neighbor offset: %f, right_x_offset: %f', neighbor_offset, right_x_offset - self.parameters.U(item.x + item.w))
                             else:
                                 right_x_offset += self.parameters.U(max_x - item.end_x)
                             if include_right_border == False:
@@ -639,53 +649,52 @@ class Keyboard():
                         
                         # if include_left_border == False:
                         if item.has_neighbor('left') == False:
-                            # logger.debug('2: switch %s, left_x_offset %f', str(item), left_x_offset)
-                            # logger.debug('switch %s, has left neighbor %s', str(item), str(item.has_neighbor('left')))
-                            # logger.debug('remove_block_length: %f, item.x: %f, self.parameters.U(item.x): %f, -(remove_block_length) + self.parameters.U(item.x): %f', remove_block_length, item.x, self.parameters.U(item.x), -(remove_block_length) + self.parameters.U(item.x))
+                            # self.logger.debug('2: switch %s, left_x_offset %f', str(item), left_x_offset)
+                            # self.logger.debug('switch %s, has left neighbor %s', str(item), str(item.has_neighbor('left')))
+                            # self.logger.debug('remove_block_length: %f, item.x: %f, self.parameters.U(item.x): %f, -(remove_block_length) + self.parameters.U(item.x): %f', remove_block_length, item.x, self.parameters.U(item.x), -(remove_block_length) + self.parameters.U(item.x))
                             left_x_offset += -(remove_block_length) + self.parameters.U(item.x)
-                            # logger.debug('3: switch %s, left_x_offset %f', str(item), left_x_offset)
+                            # self.logger.debug('3: switch %s, left_x_offset %f', str(item), left_x_offset)
 
                             if item.has_neighbor('left', 'global') == True:
                                 neighbor_offset = item.get_neighbor_offset('left', 'global')
-                                # logger.debug('\t\tglobal left neighbor offset: %f, left_x_offset: %f', neighbor_offset, left_x_offset)
+                                # self.logger.debug('\t\tglobal left neighbor offset: %f, left_x_offset: %f', neighbor_offset, left_x_offset)
                                 if neighbor_offset > 0.0:
                                     left_x_offset -= self.parameters.U(neighbor_offset) / 2
-                                    # logger.debug('\t\tglobal left neighbor offset: %f, left_x_offset: %f', neighbor_offset, left_x_offset)
+                                    # self.logger.debug('\t\tglobal left neighbor offset: %f, left_x_offset: %f', neighbor_offset, left_x_offset)
 
                             if include_left_border == False:
-                                # logger.debug('4: switch %s, left_x_offset %f', str(item), left_x_offset)
+                                # self.logger.debug('4: switch %s, left_x_offset %f', str(item), left_x_offset)
                                 remove_block += down(remove_block_z_offset) ( right(left_x_offset) ( forward(y_offset) ( cube([remove_block_length, bar_height, remove_block_height]) ) ) )
                                 # remove_block += down(self.support_bar_height * 3) ( right(left_x_offset) ( forward(self.parameters.U(item.y - item.h) ) ( cube([self.support_bar_width / 2, bar_height, self.support_bar_height * 10]) ) ) )
                         
                         # if include_top_border == False:
-                        #     logger.debug('switch %s, has top neighbor %s', str(item), str(item.has_neighbor('top')))
+                        #     self.logger.debug('switch %s, has top neighbor %s', str(item), str(item.has_neighbor('top')))
                         #     if item.has_neighbor('top') == False:
-                        #         logger.debug('\tno top neighbor')
+                        #         self.logger.debug('\tno top neighbor')
                         #         top_switch_edge += down(self.support_bar_height * 3) ( right(self.parameters.U(item.x + item.w)) ( forward(self.parameters.U(item.y - item.h) ) ( cube([self.support_bar_width / 2, self.parameters.U(item.h), self.support_bar_height * 10]) ) ) )
                         
                         # if include_bottom_border == False:
-                        #     logger.debug('switch %s, has bottom neighbor %s', str(item), str(item.has_neighbor('bottom')))
+                        #     self.logger.debug('switch %s, has bottom neighbor %s', str(item), str(item.has_neighbor('bottom')))
                         #     if item.has_neighbor('bottom') == False:
-                        #         logger.debug('\tno bottom neighbor')
+                        #         self.logger.debug('\tno bottom neighbor')
                         #         bottom_switch_edge += down(self.support_bar_height * 3) ( right(self.parameters.U(item.x + item.w)) ( forward(self.parameters.U(item.y - item.h) ) ( cube([self.support_bar_width / 2, self.parameters.U(item.h), self.support_bar_height * 10]) ) ) )
 
         return remove_block
 
     
     def get_bottom_section_remove_block(self, section_number):
-        this_function_name = sys._getframe(  ).f_code.co_name
-        logger = self.logger.getChild(this_function_name)
+        
         
         # section = self.switch_section_list[section_number]
 
-        logger.debug('Get Section %d', section_number)
+        self.logger.debug('Get Section %d', section_number)
 
-        logger.debug('real_case_width: %f', self.parameters.real_case_width)
-        logger.debug('real_case_height: %f', self.parameters.real_case_height)
+        self.logger.debug('real_case_width: %f', self.parameters.real_case_width)
+        self.logger.debug('real_case_height: %f', self.parameters.real_case_height)
 
         section_size = self.parameters.real_case_width / self.parameters.bottom_section_count
 
-        logger.debug('section_size: %f', section_size)
+        self.logger.debug('section_size: %f', section_size)
 
         start_x = section_size * section_number
         end_x = start_x + section_size
@@ -701,7 +710,7 @@ class Keyboard():
         height = self.parameters.real_case_height * 2
         thickness = self.parameters.case_height_extra_fill * 2
 
-        logger.debug('section: %d, x_offset: %f, width: %f, y_offset: %f', section_number, x_offset, width, y_offset)
+        self.logger.debug('section: %d, x_offset: %f, width: %f, y_offset: %f', section_number, x_offset, width, y_offset)
 
         return right(x_offset) ( back(y_offset) ( down(z_offset) ( cube([width, height, thickness]) ) ) )
 
@@ -715,16 +724,16 @@ class Keyboard():
             screw_x = screw_hole_info['x']
             # screw_y = screw_hole_info['y']
 
-            # logger.debug('coord_string: %s, screw_x: %f, screw_y: %f', coord_string, screw_x, screw_y)
+            # self.logger.debug('coord_string: %s, screw_x: %f, screw_y: %f', coord_string, screw_x, screw_y)
 
             screw_hole_min_x = screw_x - screw_hole_info['support_directions']['left']
             screw_hole_max_x = screw_x + screw_hole_info['support_directions']['right']
 
-            # logger.debug('screw_hole_min_x: %f, screw_hole_max_x: %f', screw_hole_min_x, screw_hole_max_x)
+            # self.logger.debug('screw_hole_min_x: %f, screw_hole_max_x: %f', screw_hole_min_x, screw_hole_max_x)
 
             # Left side of section cutout is within a screw hole support
             if start_x > screw_hole_min_x and start_x < screw_hole_max_x:
-                # logger.debug('Left side in support: old start_x: %f', start_x)
+                # self.logger.debug('Left side in support: old start_x: %f', start_x)
                 # Left sie of section cutout is in the middle of a screw hole
                 # move the start to the right
                 if start_x >= screw_x:
@@ -732,11 +741,11 @@ class Keyboard():
                 if start_x < screw_x:
                     start_x = screw_hole_min_x
 
-                # logger.debug('Left side in support: new start_x: %f', start_x)
+                # self.logger.debug('Left side in support: new start_x: %f', start_x)
 
             # Right side of section cutout is within a screw hole support
             if end_x > screw_hole_min_x and end_x < screw_hole_max_x:
-                # logger.debug('Right side in support: old end_x: %f', end_x)
+                # self.logger.debug('Right side in support: old end_x: %f', end_x)
                 # Right side of section cutout is in the middle of a screw hole
                 # move the end to the right
                 if end_x >= screw_x:
@@ -744,7 +753,7 @@ class Keyboard():
                 if end_x < screw_x:
                     end_x = screw_hole_min_x
 
-                # logger.debug('Right side in support: new end_x: %f', end_x)
+                # self.logger.debug('Right side in support: new end_x: %f', end_x)
 
         return (start_x, end_x)
 
