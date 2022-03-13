@@ -29,9 +29,8 @@ logger.setLevel(logging.DEBUG)
 
 
 # Create formatters
-console_formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
-file_formatter = logging.Formatter('%(asctime)s - %(msecs)d - %(name)s - %(levelname)s - %(message)s')
-
+console_formatter = logging.Formatter('%(name)s %(levelname)s: %(funcName)s: [%(lineno)d]: %(message)s')
+file_formatter = logging.Formatter('%(asctime)s %(levelname)s %(name)s: %(funcName)s: [%(lineno)d]: %(message)s')
 
 # Create console handler and set level to info
 console_handler = logging.StreamHandler()
@@ -43,10 +42,9 @@ console_handler.setFormatter(console_formatter)
 # Add console handler to logger
 logger.addHandler(console_handler)
 
-
 # Get file info that will be used to creat log file
 script_location = Path(os.path.dirname(os.path.realpath(__file__)))
-log_file_name = 'log.txt'
+log_file_name = 'generator.log'
 log_file_path = script_location / log_file_name
 
 # Create file handler and set level to info
@@ -127,8 +125,6 @@ def main():
     scad_postfix = '.scad'
     stl_postfix  = '.stl'
 
-    logger.debug('Read layout from file %s', input_file_path)
-
     # Set fragments per circle
     FRAGMENTS = args.fragments
     logger.debug('\tFragments: %d', FRAGMENTS)
@@ -138,6 +134,7 @@ def main():
     json_key_replace = '\\1"\\2":'
 
     # Open JSON layout file
+    logger.debug('Open layout file %s', input_file_path)
     try:
         # Try with utf-8 encoding specified
         f = open(input_file_path, encoding="utf-8")
@@ -151,6 +148,7 @@ def main():
             logger.error('Failed to open layout file both spefifying utf-8 andcoding and not specifying any encodeing. Exiting')
             exit(1)
 
+    logger.debug('Read layout JSON string from file %s', input_file_path)
     try:
         keyboard_layout = f.read()
     except UnicodeDecodeError:
@@ -160,6 +158,7 @@ def main():
     keyboard_layout_dict = None
 
     # Load keyboard layout dictionary
+    logger.debug('Parse layout file JSON string')
     try:
         # Attempt to parse to provided JSON string
         keyboard_layout_dict = json.loads(keyboard_layout)
@@ -184,6 +183,7 @@ def main():
     parameter_dict = None
     if args.parameter_file is not None:
         # Open JSON parameter file
+        logger.debug('Open parameter file %s', args.parameter_file)
         try:
             # Try with utf-8 encoding specified
             f = open(args.parameter_file, encoding="utf-8")
@@ -198,13 +198,14 @@ def main():
                 exit(1)
         
 
+        logger.debug('Read JSON string from parameter file %s', args.parameter_file)
         try:
              parameter_file_text = f.read()
         except UnicodeDecodeError:
             logger.error('Unable to decode parameter file. Please provide utf-8 encoded files')
             exit(-1)
        
-
+        logger.debug('Parse parameter JSON string')
         try:
             parameter_dict = json.loads(parameter_file_text)
             logger.debug('Valid Json Parsed')
@@ -212,15 +213,15 @@ def main():
             logger.error('Failed to parse json after attempt at correction.')
             raise
 
+        logger.debug('parameter_dict: %s', str(parameter_dict))
+
+
     # Set parameters from imput file
     parameters = Parameters(parameter_dict)
     
     # Create Keyboard instance
     keyboard = Keyboard(parameters)
 
-    # Set keyboard desired section if a section is specified
-    # if args.section > -1:
-        
     # Process the keyboard layout object
     keyboard.process_keyboard_layout(keyboard_layout_dict)
     keyboard.process_custom_shapes()
@@ -297,14 +298,12 @@ def main():
         solid_object_dict['global']['cable_holder_clamp'] = cable.holder_clamp()
         solid_object_dict['global']['cable_holder_all'] = cable.holder_all()
 
+    print(parameters)
+    print('Case Height: %f, Case Width: %f\n' % (parameters.real_case_height, parameters.real_case_width))
+    
     logger.info('Case Height: %f, Case Width: %f', parameters.real_case_height, parameters.real_case_width)
     logger.info('Sections In Top: %d', keyboard.get_top_section_count())
     logger.info('Sections In Bottom: %d', keyboard.get_bottom_section_count())
-
-    # Remove all sections but the one desired if section option used
-    # if args.section > -1:
-    #     assembly -= keyboard.get_section_remove_block(args.section)
-
 
 
     ############################################################
@@ -354,42 +353,8 @@ def main():
 
                     openscad_command_list = ['openscad', '-o', '%s' % (stl_file_name), '%s' % (scad_file_name)]
                     subprocess_dict[stl_file_name] = subprocess.Popen(openscad_command_list)
-
-    # if parameters.cable_hole == True:
-    #     cable = Cable(parameters)
-
-    #     side = 'main'
-    #     scad_file_name = scad_folder_path / (layout_name + '_cable_holder_' + side + scad_postfix)
-    #     stl_file_name = stl_folder_path / (layout_name + '_cable_holder_' + side + stl_postfix)
-    #     logger.info('Generate scad file with name %s', scad_file_name)
-    #     scad_render_to_file(cable.holder_main(), scad_file_name, file_header=f'$fn = {FRAGMENTS};')
-    #     print('Generated scad file with name', scad_file_name)
-    #     if args.render:
-    #         openscad_command_list = ['openscad', '-o', '%s' % (stl_file_name), '%s' % (scad_file_name)]
-    #         subprocess_dict[stl_file_name] = subprocess.Popen(openscad_command_list)
-
-
-    #     side = 'clamp'
-    #     scad_file_name = scad_folder_path / (layout_name + '_cable_holder_' + side + scad_postfix)
-    #     stl_file_name = stl_folder_path / (layout_name + '_cable_holder_' + side + stl_postfix)
-    #     logger.info('Generate scad file with name %s', scad_file_name)
-    #     scad_render_to_file(cable.holder_clamp(), scad_file_name, file_header=f'$fn = {FRAGMENTS};')
-    #     print('Generated scad file with name', scad_file_name)
-    #     if args.render:
-    #         openscad_command_list = ['openscad', '-o', '%s' % (stl_file_name), '%s' % (scad_file_name)]
-    #         subprocess_dict[stl_file_name] = subprocess.Popen(openscad_command_list)
-
-    #     scad_file_name = scad_folder_path / (layout_name + '_cable_holder_all' + scad_postfix)
-    #     stl_file_name = scad_folder_path / (layout_name + '_cable_holder_all' + stl_postfix)
-    #     logger.info('Generate scad file with name %s', scad_file_name)
-    #     scad_render_to_file(cable.holder_all(), scad_file_name, file_header=f'$fn = {FRAGMENTS};')
-    #     print('Generated scad file with name', scad_file_name)
-    #     if args.render:
-    #         openscad_command_list = ['openscad', '-o', '%s' % (stl_file_name), '%s' % (scad_file_name)]
-    #         subprocess_dict[stl_file_name] = subprocess.Popen(openscad_command_list)
-
-
-
+    
+    
     ################################################################
     #  Wait for render processes to complete
     ################################################################
