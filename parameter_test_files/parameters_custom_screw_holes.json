@@ -1,0 +1,49 @@
+{
+    "x_build_size" : 200,
+    "y_build_size" : 200,
+
+    "kerf" : 0.01,
+
+    "switch_type": "mx_openable",
+    "stabilizer_type": "cherry_costar",
+
+    "custom_shape": false, 
+    "custom_shape_points": null,
+    "custom_shape_path": null,
+    
+    "plate_supports": true,
+    "support_bar_height" : 3.0,
+    "support_bar_width" : 3.0,    
+
+    "top_margin" : 12,
+    "bottom_margin" : 12,
+    "left_margin" : 0,
+    "right_margin" : 12,
+
+    "case_height" : 18,
+    "case_wall_thickness" : 3.0,
+    "plate_thickness" : 1.111,
+    "plate_corner_radius" : 4,
+    "bottom_cover_thickness": 2,
+
+    "tilt": 0,
+
+    "screw_count": 4,
+    "screw_diameter": 4,
+    "screw_edge_inset": 9,
+
+    "custom_screw_hole_coordinates": [
+        [0, 0],
+        [12, 135],
+        [347, 12],
+        [347, 135],
+        [159.5, 73,5, "h"],
+        [199.5, 73.5, "v"]
+    ],
+
+    "cable_hole": true,
+    "cable_hole_width": 11,
+    "cable_hole_height": 7,
+    "cable_diameter": 3,
+    "cable_hole_down_offset": 5
+}

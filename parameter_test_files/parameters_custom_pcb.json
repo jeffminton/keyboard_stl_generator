@@ -1,0 +1,92 @@
+{
+    "x_build_size" : 200,
+    "y_build_size" : 200,
+
+    "kerf" : 0.01,
+
+    "switch_type": "mx_openable",
+    "stabilizer_type": "cherry_costar",
+
+    "custom_shape": false, 
+    "custom_shape_points": null,
+    "custom_shape_path": null,
+    
+    "plate_supports": true,
+    "support_bar_height" : 3.0,
+    "support_bar_width" : 3.0,    
+
+    "top_margin" : 58,
+    "bottom_margin" : 10,
+    "left_margin" : 0,
+    "right_margin" : 12,
+
+    "case_height" : 18,
+    "case_wall_thickness" : 3.0,
+    "plate_thickness" : 1.111,
+    "plate_corner_radius" : 4,
+    "bottom_cover_thickness": 2,
+
+    "tilt": 2,
+
+    "screw_count": 4,
+    "screw_diameter": 4,
+    "screw_edge_inset": 8,
+    "screw_hole_body_wall_width": 1.5,
+
+    "custom_pcb": true,
+    "pcb_width": 362,
+    "pcb_height": 177,
+    "pcb_top_left_coordinates": [110, 166],
+    "pcb_left_switch_center_x_coordinate": 126.695,
+    "pcb_top_switch_center_y_coordinate": 221,
+    "pcb_case_top_margin": 3,
+    "pcb_case_bottom_margin": 3,
+    "pcb_case_left_margin": 3,
+    "pcb_case_right_margin": 3,
+
+    
+    "custom_screw_hole_coordinates_origin": [114,339],
+    "custom_screw_hole_coordinates": [
+        [114, 339],
+        [202.5, 339],
+        [291, 339],
+        [379.5, 339],
+        [468, 339],
+        [114, 254.499],
+        [114, 170],
+        [202.5, 170],
+        [275, 170],
+        [305, 170],
+        [379.5, 170],
+        [468, 170],
+        [467.999, 254.499],
+        [147, 287.675, "v"],
+        [202.5, 235, "h"],
+        [291, 235, "h"],
+        [379.5, 235, "h"],
+        [363, 287.675, "v"],
+        [114, 215],
+        [114, 205],
+        [467.999, 205],
+        [467.999, 215],
+        [236.25, 221, "v"],
+        [322, 221, "v"]
+    ],
+
+    "cable_hole": true,
+    "cable_hole_width": 11,
+    "cable_hole_height": 7,
+    "cable_diameter": 3,
+    "cable_hole_down_offset": 5,
+
+    "custom_polygons": [
+        {
+            "type": "rectangle",
+            "width": 324,
+            "height": 31,
+            "coordinates": [
+                [14, 144]
+            ]
+        }
+    ]
+}
