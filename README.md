@@ -1,15 +1,15 @@
 - [Keyboard Case and Plate STL Generator With Automatic Model Segmentation](#keyboard-case-and-plate-stl-generator-with-automatic-model-segmentation)
-  - [How it Works](#how-it-works)
-  - [Setup](#setup)
-    - [Requirements](#requirements)
-    - [Usage](#usage)
-    - [Parameters](#parameters)
-  - [Example Output](#example-output)
-    - [Output Format](#output-format)
-    - [Small Layout Test](#small-layout-test)
-    - [Full Size ANSI](#full-size-ansi)
-  - [Printed Part](#printed-part)
-  - [Acknowledgements](#acknowledgements)
+- [How it Works](#how-it-works)
+- [Setup](#setup)
+  - [Requirements](#requirements)
+  - [Usage](#usage)
+  - [Parameters](#parameters)
+- [Example Output](#example-output)
+  - [Output Format](#output-format)
+  - [Small Layout Test](#small-layout-test)
+  - [Full Size ANSI](#full-size-ansi)
+- [Printed Part](#printed-part)
+- [Acknowledgements](#acknowledgements)
 
 # Keyboard Case and Plate STL Generator With Automatic Model Segmentation
 This is meant to generate a scad and or stl file from a [keyboard-layout-editor](http://www.keyboard-layout-editor.com/) layout file. 
@@ -17,14 +17,14 @@ This is meant to generate a scad and or stl file from a [keyboard-layout-editor]
 Additionally the model can be automatically segmented so that the parts will fit within the build area of your 3d printer
 
 
-## How it Works
+# How it Works
 The program takes a keyboard-layout-editor json file as one of the inputs along with an optional parameter json file to customize other parts of the resulting model
 
 The program can then genarate a number of different items. The entire case can be generated as a single model or the case can be broken up so that parts will fit within the build size of your 3d printer. The build size is one of the values that can be places in the optional parameters file.
 
 
-## Setup
-### Requirements
+# Setup
+## Requirements
 
 - **Python**: Python is required to run the program. This was built using Python 3.8.10 but I expect newer versions should work fine
 
@@ -35,7 +35,7 @@ The program can then genarate a number of different items. The entire case can b
   ```
 - **[OpenSCAD](https://openscad.org/)**: In order to render STL files you will have to have OpenSCAD installed and the OpenSCAD executable must be on your path. OpenSCAD downloads can be found here https://openscad.org/downloads.html
 
-### Usage
+## Usage
 - Here is an examle of the program cli usage
   ![keyboard_stl_generator.py usage](/images/usage.png)
 
@@ -55,7 +55,7 @@ The program can then genarate a number of different items. The entire case can b
 
 - **-s option**: This is used to generate just the model for a specific section
 
-### Parameters
+## Parameters
 - This is an example of a simple parameters file [parameters.json](/parameters.json)
 - Here is a list of the possible paramters and what they do
   - 3d Printer Relate Paramters
@@ -144,9 +144,22 @@ The program can then genarate a number of different items. The entire case can b
             }
         ]
         ```
+  - Custom PCB Parameters: These options are to be used when you want to have a case generated to fit a specific PCB inclusing the mounting holes in the PCB. This was setups spcifically to handle easily creating a case for a PCB built in kicad. Milage may vary for other PCBs
+    
+    - **custom_pcb:** Generate the case to fit a specific PCB. true or false
+    - **pcb_width:** The width of the PCB
+    - **pcb_height:** The height of the PCB
+    - **pcb_top_left_coordinates:** The coordinates that should represent the top lef tcorner of the PCB. In kicad this would be the actual x,y coordinates of the top left corner in the PCB editor. 
+      - **NOTE: If using a custom PCB and custom screw holes for the PCB the custom_screw_hole_coordinates_origin parameter must be in the same coordinate system as the value of pcb_top_left_coordinates**
+    - **pcb_left_switch_center_x_coordinate:** The X coordinate for the center of the left most switch on the layout. 
+    - **pcb_top_switch_center_y_coordinate:** The Y coordinate for the center of the top most switch on the layout.
+    - **pcb_case_top_margin:** The space between the top edge of the PCB and the inside of the case wall
+    - **pcb_case_bottom_margin:** The space between the bottom edge of the PCB and the inside of the case wall
+    - **pcb_case_right_margin:** The space between the right edge of the PCB and the inside of the case wall
+    - **pcb_case_left_margin:** The space between the left edge of the PCB and the inside of the case wall
 
-## Example Output
-### Output Format
+# Example Output
+## Output Format
 - The program exports 4 different files for each model it is set to generate
   - **top**: the top part of a complete case. meant to be screwed to the bottom to make a complete case
   - **bottom**: the bottom of the case with screw posts to connect it to the top of the case
@@ -156,7 +169,7 @@ The program can then genarate a number of different items. The entire case can b
 - There will be separate scad and stl folders in the export folder
 
 
-### Small Layout Test
+## Small Layout Test
 - This shows testing done using a msall layout and changing the printer build plate settings to force it to split the design up.
 
   This is an image of the layout design on keyboard-layout-editor
@@ -179,13 +192,13 @@ The program can then genarate a number of different items. The entire case can b
   ![small_test_exploded_top.png](/images/small_test_layout/small_test_exploded_top.png)
 
 
-### Full Size ANSI
+## Full Size ANSI
 - Bellow is and exploded view of the generated model for a full size keyboard
 
   ![small_test_exploded_top.png](/images/full_size/full_size_exploded_top.png)
 
 
-## Printed Part
+# Printed Part
 Here are some pictures of that raw parts from the printer and the assembled case
 
 - Topside of Top
@@ -216,5 +229,5 @@ Here are some pictures of that raw parts from the printer and the assembled case
   ![assembled_tile.jpg](/images/small_test_layout/assembled_tilt.jpg)
 
 
-## Acknowledgements
+# Acknowledgements
 Shout out to Will Stevens https://github.com/swill for his plate generator that provided inspiration and very useful measurements. The swillkb plate and case generator is here http://builder.swillkb.com/
