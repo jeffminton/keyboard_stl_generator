@@ -9,11 +9,14 @@ from support_cutout import SupportCutout
 
 from item_collection import ItemCollection
 from cell import Cell
+from parameters import Parameters
 
 
 class RotationCollection:
-    def __init__(self):
+    def __init__(self, parameters: Parameters = Parameters()):
 
+        self.parameters = parameters
+        
         self.logger = logging.getLogger().getChild(__name__)
 
         self.rotation_collection = {}

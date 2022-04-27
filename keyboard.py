@@ -54,9 +54,9 @@ class Keyboard():
         self.switch_collection = ItemCollection()
         self.support_collection = ItemCollection()
         self.support_cutout_collection = ItemCollection()
-        self.switch_rotation_collection = RotationCollection()
-        self.support_rotation_collection = RotationCollection()
-        self.support_cutout_rotation_collection = RotationCollection()
+        self.switch_rotation_collection = RotationCollection(self.parameters)
+        self.support_rotation_collection = RotationCollection(self.parameters)
+        self.support_cutout_rotation_collection = RotationCollection(self.parameters)
 
         self.custom_polygon_collection = ItemCollection()
 
