@@ -135,3 +135,7 @@ dmypy.json
 
 
 log.txt
+
+
+# ignore issues folder
+issues/
