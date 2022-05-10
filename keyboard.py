@@ -540,6 +540,11 @@ class Keyboard():
 
         (min_x, max_x, max_y, min_y) = section.get_collection_bounds()
 
+        min_x_mm = self.parameters.U(min_x)
+        max_x_mm = self.parameters.U(max_x)
+        max_y_mm = self.parameters.U(max_y)
+        min_y_mm = self.parameters.U(min_y)
+        
         # (case_min_x, case_max_x, case_max_y, case_min_y) = section.get_collection_bounds()
 
         self.logger.debug('Section Bounds: min_x: %f, max_x: %f, max_y: %f, min_y: %f', min_x, max_x, max_y, min_y)
@@ -569,6 +574,9 @@ class Keyboard():
         remove_block_z_offset = remove_block_height / 2
         remove_block_length = self.parameters.real_max_x
         
+        section_has_right_global_neighbor = section.has_global_right_neighbor_section()
+        section_has_left_global_neighbor = section.has_global_left_neighbor_section()
+
         # Draw non border edges
         for rx in section.get_rx_list():
             for ry in section.get_ry_list_in_rx(rx):
@@ -581,6 +589,7 @@ class Keyboard():
                         bar_height = self.parameters.U(item.h) + (self.kerf * 2)
                         y_offset = self.parameters.U(item.y - item.h) - self.kerf
                         right_x_offset = 0.0
+                        self.logger.debug('right_x_offset: %f', right_x_offset)
                         left_x_offset = 0.0
 
                         # if switch has a local top neighbor include any offset between this and that key in separator bar
@@ -606,12 +615,15 @@ class Keyboard():
                                 # perp_offset = item.get_neighbor_perp_offset('right')
                                 # if perp_offset > 0.0:
                                 #     self.logger.debug('Switch: %s, perp_offset: %f', str(item), perp_offset)
+
                         
-                        # If switch has no global right neighbor
+                        # If switch has no global right neighbor and 
                         if item.has_neighbor('right', 'global') == False and item.end_x == max_x:
-                            # self.logger.debug('Switch %s, No global right neighbor. Not at board edge', str(item))
+                            self.logger.debug('Switch %s, No global right neighbor. item.end_x == max_x (%d == %d)', str(item), item.end_x, max_x)
                             neighbor = None
                             neighbor_offset = 0.0
+
+                            # Switch has local top neighbor
                             if item.has_neighbor('top') == True:
                                 neighbor = item.get_neighbor('top')
                                 # self.logger.debug('Switch: %s, top neighbor: %s', str(item), str(neighbor))
@@ -619,6 +631,7 @@ class Keyboard():
                                 if offset > neighbor_offset:
                                     neighbor_offset = offset
 
+                            # Switch has local bottom neighbor
                             if item.has_neighbor('bottom') == True:
                                 neighbor = item.get_neighbor('bottom')
                                 # self.logger.debug('Switch: %s, bottom neighbor: %s', str(item), str(neighbor))
@@ -630,6 +643,7 @@ class Keyboard():
 
                             if neighbor_offset > 0.0:
                                 right_x_offset += self.parameters.U(neighbor_offset) / 2
+                                self.logger.debug('right_x_offset: %f', right_x_offset)
                                 # self.logger.debug('1: switch %s, right_x_offset %f', str(item), right_x_offset)
 
                         
@@ -637,25 +651,41 @@ class Keyboard():
                         if item.has_neighbor('right') == False:
                             # self.logger.debug('switch %s, has right neighbor %s', str(item), str(item.has_neighbor('right')))
                             right_x_offset += self.parameters.U(item.x + item.w)
-
+                            self.logger.debug('right_x_offset: %f', right_x_offset)
+                            
+                            # Switch has global right neighbor
                             if item.has_neighbor('right', 'global') == True:
+                                # Get Global roght neightbor offset
+                                # Set right_x_offset to minimum value of half neighbor offset or the maximum x for the setion
                                 neighbor_offset = item.get_neighbor_offset('right', 'global')
                                 right_x_offset += self.parameters.U(min([neighbor_offset / 2, max_x]))
+                                self.logger.debug('right_x_offset: %f', right_x_offset)
                                 # self.logger.debug('\t\tglobal right neighbor offset: %f, right_x_offset: %f', neighbor_offset, right_x_offset - self.parameters.U(item.x + item.w))
                             else:
+                                # Set right_x_offset to maximum x for the setion minus the end x coordinate of the switch
                                 right_x_offset += self.parameters.U(max_x - item.end_x)
+                                self.logger.debug('right_x_offset: %f', right_x_offset)
+
+                            
                             if include_right_border == False:
                                 remove_block += down(remove_block_z_offset) ( right(right_x_offset) ( forward(y_offset) ( cube([remove_block_length, bar_height, remove_block_height]) ) ) )
                         
-                        # if include_left_border == False:
+                        # If switch has no local left neighbor
                         if item.has_neighbor('left') == False:
                             # self.logger.debug('2: switch %s, left_x_offset %f', str(item), left_x_offset)
                             # self.logger.debug('switch %s, has left neighbor %s', str(item), str(item.has_neighbor('left')))
                             # self.logger.debug('remove_block_length: %f, item.x: %f, self.parameters.U(item.x): %f, -(remove_block_length) + self.parameters.U(item.x): %f', remove_block_length, item.x, self.parameters.U(item.x), -(remove_block_length) + self.parameters.U(item.x))
-                            left_x_offset += -(remove_block_length) + self.parameters.U(item.x)
+                            # if switch has no global left neighbor
+                            if item.has_neighbor('left', 'global') == False:
+                                if section_has_left_global_neighbor == True:
+                                    left_x_offset += -(remove_block_length) + self.parameters.U(min_x)
+                            
+                            
+                            
                             # self.logger.debug('3: switch %s, left_x_offset %f', str(item), left_x_offset)
 
                             if item.has_neighbor('left', 'global') == True:
+                                left_x_offset += -(remove_block_length) + self.parameters.U(item.x)
                                 neighbor_offset = item.get_neighbor_offset('left', 'global')
                                 # self.logger.debug('\t\tglobal left neighbor offset: %f, left_x_offset: %f', neighbor_offset, left_x_offset)
                                 if neighbor_offset > 0.0:

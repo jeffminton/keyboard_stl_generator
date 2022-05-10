@@ -61,41 +61,62 @@ class ItemCollection:
     def get_moved_item(self, x_offset, y_offset, rx = 0.0, ry = 0.0) -> Cell:
         return self.collection[rx][ry][x_offset][y_offset].get_moved()
 
+    def collection_has_keys(self, rx = 0.0, ry = 0.0, x = None, y = None):
+        if rx not in self.collection.keys():
+            return False
+        if ry not in self.collection[rx].keys():
+            return False
+        if x is not None and x not in self.collection[rx][ry].keys():
+            return False
+        if y is not None and y not in self.collection[rx][ry][x].keys():
+            return False
+        
+        return True
+
     def get_rx_list(self):
         return self.collection.keys()
 
     def get_ry_list_in_rx(self, rx):
-        return self.collection[rx].keys()
+        if self.collection_has_keys(rx):
+            return self.collection[rx].keys()
+        else:
+            return []
 
     def get_x_list_in_rx_ry(self, rx = 0.0, ry = 0.0):
-        return self.collection[rx][ry].keys()
-
+        if self.collection_has_keys(rx, ry):
+            return self.collection[rx][ry].keys()
+        else:
+            return []
     def get_y_list_in_rx_ry_x(self, x, rx = 0.0, ry = 0.0):
-        return self.collection[rx][ry][x].keys()
+        if self.collection_has_keys(rx, ry, x):
+            return self.collection[rx][ry][x].keys()
+        else:
+            return []
 
     def get_x_list(self, rx = 0.0, ry = 0.0):
-        return self.collection[rx][ry].keys()
+        return self.get_x_list_in_rx_ry(rx, ry)
+
 
     def get_sorted_x_list(self, rx = 0.0, ry = 0.0):
-        return sorted(self.collection[rx][ry].keys())
+        return sorted(self.get_x_list(rx, ry))
 
     def get_y_list_in_x(self, x, rx = 0.0, ry = 0.0):
-        return self.collection[rx][ry][x].keys()
+        return self.get_y_list_in_rx_ry_x(x, rx, ry)
 
     def get_sorted_y_list_in_x(self, x, rx = 0.0, ry = 0.0):
-        return sorted(self.collection[rx][ry][x].keys())
+        return sorted(self.get_y_list_in_x(x, rx, ry))
 
     def get_min_x(self, rx = 0.0, ry = 0.0):
-        return min(self.collection[rx][ry].keys())
+        return min(self.get_x_list(rx, ry))
 
     def get_max_x(self, rx = 0.0, ry = 0.0):
-        return max(self.collection[rx][ry].keys())
+        return max(self.get_x_list(rx, ry))
         
     def get_min_y(self, rx = 0.0, ry = 0.0):
         min_y = 0
         
-        for x in self.collection[rx][ry].keys():
-            col_min_y = min(self.collection[rx][ry][x].keys())
+        for x in self.get_x_list(rx, ry):
+            col_min_y = min(self.get_y_list_in_rx_ry_x(x, rx, ry))
 
             if col_min_y < min_y:
                 min_y = col_min_y    
@@ -334,3 +355,24 @@ class ItemCollection:
                                     self.logger.debug('Cell "%s" %s neighbor "%s" reverse neighbor %s has has different value %s', item_cell_value, direction, neighbor_cell_value, reverse_direction, reverse_neighbor_cell_value)
         
         # self.dot.render(output_filename, engine = 'neato')
+
+    def has_global_neighbor_section(self, neighbor_name = ''):
+        for rx in self.get_rx_list():
+            for ry in self.get_ry_list_in_rx(rx):
+                for x in self.get_x_list_in_rx_ry(rx, ry):
+                    for y in self.get_y_list_in_rx_ry_x(x, rx, ry):
+                        item: Switch
+                        item = self.get_item(x, y, rx, ry)
+
+                        local_neighbor = item.get_neighbor(neighbor_name, neighbor_group = 'local')
+                        global_neighbor = item.get_neighbor(neighbor_name, neighbor_group = 'global')
+
+                        if local_neighbor is None and global_neighbor is not None:
+                            return True
+
+
+    def has_global_right_neighbor_section(self):
+        return self.has_global_neighbor_section(neighbor_name = 'right')
+    
+    def has_global_left_neighbor_section(self):
+        return self.has_global_neighbor_section(neighbor_name = 'left')

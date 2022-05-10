@@ -210,7 +210,7 @@ def main():
             parameter_dict = json.loads(parameter_file_text)
             logger.debug('Valid Json Parsed')
         except:
-            logger.error('Failed to parse json after attempt at correction.')
+            logger.error('Failed to parse parameter JSON file.')
             raise
 
         logger.debug('parameter_dict: %s', str(parameter_dict))
@@ -254,10 +254,12 @@ def main():
     elif args.exploded == True:
         solid_object_dict[-1] = {}
         solid_object_dict[-1]['top'] = union()
+        solid_object_dict[-1]['plate'] = union()
         solid_object_dict[-1]['bottom'] = union()
         for section in range(keyboard.get_top_section_count()):
             keyboard.set_section(section)
             solid_object_dict[-1]['top'] += up(5 * section) ( right(10 * section) ( keyboard.get_assembly(top = True) ) )
+            solid_object_dict[-1]['plate'] += up(5 * section) ( right(10 * section) ( keyboard.get_assembly(plate_only = True) ) )
             if section < keyboard.get_bottom_section_count():
                 solid_object_dict[-1]['bottom'] += up(5 * section) ( right(10 * section) ( keyboard.get_assembly(bottom = True) ) )
     
