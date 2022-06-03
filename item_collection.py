@@ -42,6 +42,9 @@ class ItemCollection:
         if x_offset not in self.collection[rx][ry].keys():
             self.collection[rx][ry][x_offset] = {}
 
+        if rx != 0.0 or ry != 0.0:
+            self.logger.debug('Adding item to collection with rx = {}, ry = {}'.format(rx, ry))
+
         self.collection[rx][ry][x_offset][y_offset] = cell
 
 
@@ -61,14 +64,18 @@ class ItemCollection:
     def get_moved_item(self, x_offset, y_offset, rx = 0.0, ry = 0.0) -> Cell:
         return self.collection[rx][ry][x_offset][y_offset].get_moved()
 
-    def collection_has_keys(self, rx = 0.0, ry = 0.0, x = None, y = None):
+    def collection_has_keys(self, rx = 0.0, ry = None, x = None, y = None):
         if rx not in self.collection.keys():
+            self.logger.debug('Collection has no rx = {}'.format(rx))
             return False
-        if ry not in self.collection[rx].keys():
+        if ry is not None and ry not in self.collection[rx].keys():
+            self.logger.debug('Collection has no ry = {}'.format(ry))
             return False
         if x is not None and x not in self.collection[rx][ry].keys():
+            self.logger.debug('Collection has no x = {}'.format(x))
             return False
         if y is not None and y not in self.collection[rx][ry][x].keys():
+            self.logger.debug('Collection has no y = {}'.format(y))
             return False
         
         return True
