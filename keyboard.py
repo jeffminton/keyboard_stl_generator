@@ -601,15 +601,16 @@ class Keyboard():
                         # If switch has no global top neighbor include the board edge in this separator bar
                         if item.has_neighbor('top', 'global') == False:
                             # self.logger.debug('%s, Global Top Bar False', str(item))
-                            bar_height += self.parameters.U(abs(item.y)) + self.parameters.top_margin
+                            bar_height += self.parameters.U(abs(item.y)) + self.parameters.top_margin + self.parameters.support_bar_width
+                            # y_offset += self.parameters.support_bar_width
                             # self.logger.debug('\t bar_height: %f', bar_height)
 
                         # If switch has no global bottom neighbor include the board edge in this separator bar
                         if item.has_neighbor('bottom', 'global') == False:
                             # self.logger.debug('%s, Global Bottom Bar False', str(item))
-                            bar_height += self.parameters.U( abs(self.parameters.min_y) - (abs(item.y) + item.h) ) + self.parameters.bottom_margin
+                            bar_height += self.parameters.U( abs(self.parameters.min_y) - (abs(item.y) + item.h) ) + self.parameters.bottom_margin + self.parameters.support_bar_width
                             # self.logger.debug('\t bar_height: %f', bar_height)
-                            y_offset -= (self.parameters.bottom_margin + self.parameters.U( abs(self.parameters.min_y) - (abs(item.y) + item.h) ) )
+                            y_offset -= (self.parameters.bottom_margin + self.parameters.U( abs(self.parameters.min_y) - (abs(item.y) + item.h) ) ) + self.parameters.support_bar_width
 
                             # if item.has_neighbor('right') == True:
                                 # perp_offset = item.get_neighbor_perp_offset('right')
