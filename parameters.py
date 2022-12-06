@@ -92,7 +92,7 @@ class Parameters():
         self.case_wall_thickness = 0
         self.plate_thickness = 1.111
         self.plate_corner_radius = 0
-        self.bottom_cover_thickness = 0
+        self.bottom_cover_thickness = 1
         self.tilt = 0.0
 
         self.simple_test = False
