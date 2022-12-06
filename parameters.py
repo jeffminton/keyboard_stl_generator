@@ -69,10 +69,10 @@ class Parameters():
 
         self.x_build_size = 200
         self.y_build_size = 200
-        self.kerf = 0.00
+        self.kerf = 0.01
 
         self.switch_type = 'mx_openable'
-        self.stabilizer_type = 'cherry'
+        self.stabilizer_type = 'cherry_costar'
 
         # Custom Switch Cutout Attributes
         self.custom_shape = False 
@@ -81,25 +81,25 @@ class Parameters():
 
         self.plate_supports = True
         self.support_bar_height = 3.0
-        self.support_bar_width = 1.0
+        self.support_bar_width = 3.0
 
-        self.top_margin = 0
-        self.bottom_margin = 0
-        self.left_margin = 0
-        self.right_margin = 0
+        self.top_margin = 10
+        self.bottom_margin = 10
+        self.left_margin = 10
+        self.right_margin = 10
 
-        self.case_height = self.support_bar_height
-        self.case_wall_thickness = 0
+        self.case_height = 18
+        self.case_wall_thickness = 3.0
         self.plate_thickness = 1.111
-        self.plate_corner_radius = 0
+        self.plate_corner_radius = 4
         self.bottom_cover_thickness = 1
-        self.tilt = 0.0
+        self.tilt = 2.0
 
         self.simple_test = False
 
-        self.screw_count = 0
-        self.screw_diameter = 0
-        self.screw_edge_inset = 0
+        self.screw_count = 4
+        self.screw_diameter = 4
+        self.screw_edge_inset = 7
         self.screw_edge_x_inset = None
         self.screw_edge_y_inset = None
         self.screw_hole_body_wall_width = 2
