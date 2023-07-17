@@ -42,7 +42,7 @@ The program can then genarate a number of different items. The entire case can b
 - Basic usage
   
   ```
-  python keybaord_stl_generator.py -i layout_filename.json
+  python keyboard_stl_generator.py -i layout_filename.json
   ```
 
   This will generate the entire case as one peice. IT will generate top, bottom, plate, and all scad files
