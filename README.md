@@ -34,6 +34,11 @@ The program can then genarate a number of different items. The entire case can b
   pip install -r requirements.txt
   ```
 - **[OpenSCAD](https://openscad.org/)**: In order to render STL files you will have to have OpenSCAD installed and the OpenSCAD executable must be on your path. OpenSCAD downloads can be found here https://openscad.org/downloads.html
+- (Windows only) **[windows-curses](https://pypi.org/project/windows-curses/)**: This is only required if you are using windows. This is a windows specific version of the curses library that is used to create the command line interface. To install this you can use the command bellow
+
+  ```
+  pip install windows-curses
+  ```
 
 ## Usage
 - Here is an examle of the program cli usage
